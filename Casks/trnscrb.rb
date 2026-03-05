@@ -1,6 +1,6 @@
 cask "trnscrb" do
   version "0.1.1"
-  sha256 "29c6c574696bfe0f2bf1923b0ebeffbfbd040632f7a6f5e9e94281cd2ac4fb82"
+  sha256 "3ebc9af5414db5c9ca19a20495dca1d17ab35c58fe8f916664d6da961e134344"
 
   url "https://github.com/jwa91/trnscrb/releases/download/v#{version}/trnscrb-#{version}.dmg"
   name "trnscrb"
