@@ -11,9 +11,8 @@ cask "trnscrb" do
 
   app "trnscrb.app"
 
-  # TODO: Remove this postflight block once Apple has accepted our notarization
-  # submission. After that, Gatekeeper will recognize the app and the quarantine
-  # bypass is no longer needed.
+  # Temporary workaround while Apple's notarization queue is still catching up.
+  # Remove this block after the notarized DMG has been stapled and re-uploaded.
   postflight do
     system_command "/usr/bin/xattr",
                    args: ["-d", "com.apple.quarantine", "#{appdir}/trnscrb.app"],
