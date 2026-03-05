@@ -10,4 +10,10 @@ cask "trnscrb" do
   depends_on macos: ">= :sonoma"
 
   app "trnscrb.app"
+
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-d", "com.apple.quarantine", "#{appdir}/trnscrb.app"],
+                   sudo: false
+  end
 end
