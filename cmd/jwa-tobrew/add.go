@@ -1,0 +1,190 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+func runAdd(args []string) error {
+	fs := subFlagSet("add", "snapshot a published GitHub release into the tap (no token needed)")
+	kind := fs.String("kind", "", "tap entry kind: cask | formula (auto-detected from asset extension)")
+	name := fs.String("name", "", "tap entry name (defaults to the source repo name)")
+	version := fs.String("version", "", "release version to snapshot (defaults to latest)")
+	asset := fs.String("asset", "", "exact asset filename to use (defaults to single asset, or DMG-for-cask heuristic)")
+	desc := fs.String("desc", "", "one-line description for the tap entry")
+	if err := parseFlags(fs, args); err != nil {
+		return err
+	}
+
+	rest := fs.Args()
+	if len(rest) < 1 {
+		return errors.New("usage: brwtp add <github-url> [flags]")
+	}
+	owner, repo, err := parseGitHubAddURL(rest[0])
+	if err != nil {
+		return err
+	}
+	if *name == "" {
+		*name = repo
+	}
+
+	c := LoadConfig()
+	tap, err := TapDir(c)
+	if err != nil {
+		return err
+	}
+
+	// Fetch the release.
+	var rel *GHRelease
+	if *version == "" {
+		rel, err = LatestRelease(owner, repo)
+		if err != nil {
+			return err
+		}
+		*version = strings.TrimPrefix(rel.TagName, "v")
+		info("latest release: %s", rel.TagName)
+	} else {
+		tag := "v" + strings.TrimPrefix(*version, "v")
+		rel, err = ReleaseByTag(owner, repo, tag)
+		if err != nil {
+			return err
+		}
+	}
+	if len(rel.Assets) == 0 {
+		return fmt.Errorf("release %s has no assets to snapshot", rel.TagName)
+	}
+
+	// Pick the asset.
+	chosen := pickAsset(rel, *asset, *kind)
+	if chosen == "" {
+		listAssets(rel)
+		return errors.New("could not auto-pick an asset — pass --asset <name>")
+	}
+	dlURL := assetURL(rel, chosen)
+	if *kind == "" {
+		*kind = inferKindFromAsset(chosen)
+	}
+	if *kind != "cask" && *kind != "formula" {
+		return fmt.Errorf("could not infer kind from %q — pass --kind=cask|formula", chosen)
+	}
+
+	info("hashing %s", dlURL)
+	sha, err := Sha256OfURL(dlURL)
+	if err != nil {
+		return err
+	}
+
+	art := Artifact{Kind: *kind, Name: *name}
+	full := filepath.Join(tap, art.RelPath())
+	if exists(full) {
+		return fmt.Errorf("%s already exists in tap — use `brwtp bump %s` to update it", art.RelPath(), *name)
+	}
+
+	if err := writeNewTapFile(full, *kind, *name, owner, repo, *version, sha, *desc, dlURL); err != nil {
+		return err
+	}
+	ok("wrote %s", art.RelPath())
+
+	// Regenerate the tap manifest before committing so both files travel together.
+	if err := writeManifests(c, tap); err != nil {
+		warn("could not refresh tap.toml: %v", err)
+	}
+
+	hash, err := GitCommitAndPush(c, tap, []string{art.RelPath(), "tap.toml"}, fmt.Sprintf("Add %s %s", *name, *version))
+	if err != nil {
+		return err
+	}
+	if hash != "" {
+		ok("pushed commit %s — install with `brew install %s/%s/%s`", shortHash(hash), c.TapOwner, c.TapName, *name)
+	}
+	return nil
+}
+
+func parseGitHubAddURL(s string) (string, string, error) {
+	// Accept owner/repo, github.com/owner/repo, https://github.com/owner/repo, git@github.com:owner/repo
+	s = strings.TrimSuffix(s, ".git")
+	if strings.HasPrefix(s, "git@github.com:") {
+		parts := strings.SplitN(strings.TrimPrefix(s, "git@github.com:"), "/", 2)
+		if len(parts) != 2 {
+			return "", "", fmt.Errorf("could not parse %q", s)
+		}
+		return parts[0], parts[1], nil
+	}
+	if u, err := url.Parse(s); err == nil && u.Host != "" {
+		if u.Host != "github.com" {
+			return "", "", fmt.Errorf("only github.com URLs are supported (got %s)", u.Host)
+		}
+		parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+		if len(parts) < 2 {
+			return "", "", fmt.Errorf("could not extract owner/repo from %q", s)
+		}
+		return parts[0], parts[1], nil
+	}
+	parts := strings.Split(strings.Trim(s, "/"), "/")
+	if len(parts) == 2 {
+		return parts[0], parts[1], nil
+	}
+	return "", "", fmt.Errorf("could not parse %q — expected owner/repo or a github.com URL", s)
+}
+
+func pickAsset(rel *GHRelease, override, kind string) string {
+	if override != "" {
+		for _, a := range rel.Assets {
+			if a.Name == override {
+				return a.Name
+			}
+		}
+		return ""
+	}
+	// kind-driven heuristic: prefer DMG for cask, tarball/binary for formula.
+	if kind == "cask" {
+		for _, a := range rel.Assets {
+			if strings.HasSuffix(strings.ToLower(a.Name), ".dmg") {
+				return a.Name
+			}
+		}
+	}
+	if kind == "formula" {
+		for _, a := range rel.Assets {
+			n := strings.ToLower(a.Name)
+			if strings.HasSuffix(n, ".tar.gz") || strings.HasSuffix(n, ".tgz") {
+				return a.Name
+			}
+		}
+	}
+	if len(rel.Assets) == 1 {
+		return rel.Assets[0].Name
+	}
+	return ""
+}
+
+func inferKindFromAsset(name string) string {
+	n := strings.ToLower(name)
+	switch {
+	case strings.HasSuffix(n, ".dmg"), strings.HasSuffix(n, ".pkg"), strings.HasSuffix(n, ".zip"):
+		return "cask"
+	case strings.HasSuffix(n, ".tar.gz"), strings.HasSuffix(n, ".tgz"):
+		return "formula"
+	}
+	return ""
+}
+
+func assetURL(rel *GHRelease, name string) string {
+	for _, a := range rel.Assets {
+		if a.Name == name {
+			return a.BrowserDownloadURL
+		}
+	}
+	return ""
+}
+
+func listAssets(rel *GHRelease) {
+	fmt.Fprintln(os.Stderr, "available assets:")
+	for _, a := range rel.Assets {
+		fmt.Fprintf(os.Stderr, "  %s\n", a.Name)
+	}
+}

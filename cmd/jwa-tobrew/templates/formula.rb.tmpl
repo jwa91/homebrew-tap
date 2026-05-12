@@ -1,0 +1,16 @@
+class {{.ClassName}} < Formula
+  desc "{{.Desc}}"
+  homepage "https://github.com/{{.Owner}}/{{.Repo}}"
+  version "{{.Version}}"
+  url "{{.URL}}"
+  sha256 "{{.Sha256}}"
+  license "MIT"
+
+  def install
+    bin.install "{{.Name}}"
+  end
+
+  test do
+    system "#{bin}/{{.Name}}", "--version"
+  end
+end

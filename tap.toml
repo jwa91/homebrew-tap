@@ -1,0 +1,16 @@
+# tap.toml — committed manifest of items in this tap.
+# Regenerate with `brwtp config`. Source of truth is the .rb files under Casks/ and Formula/.
+
+[tap]
+owner = "jwa91"
+name  = "tap"
+
+[[items]]
+name    = "trnscrb"
+kind    = "cask"
+source  = "github.com/jwa91/trnscrb"
+version = "0.4.1"
+asset   = "trnscrb-#{version}.dmg"
+desc    = "Drop audio, PDFs, and images onto your menu bar to get markdown back"
+deps    = ["macos: \">= :tahoe\""]
+

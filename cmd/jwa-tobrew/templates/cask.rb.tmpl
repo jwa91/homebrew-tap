@@ -1,0 +1,13 @@
+cask "{{.Name}}" do
+  version "{{.Version}}"
+  sha256 "{{.Sha256}}"
+
+  url "{{.URL}}"
+  name "{{.Name}}"
+  desc "{{.Desc}}"
+  homepage "https://github.com/{{.Owner}}/{{.Repo}}"
+
+  depends_on macos: ">= :sonoma"
+
+  app "{{.Name}}.app"
+end

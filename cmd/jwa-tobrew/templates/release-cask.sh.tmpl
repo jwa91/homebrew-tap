@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Release {{.Name}} as a Homebrew {{.Kind}} via brewtap.
+#
+# Usage:
+#   ./scripts/release.sh <version> <path/to/artifact>
+#
+# Example:
+#   ./scripts/release.sh 0.5.0 build/{{.Name}}.dmg
+#
+# Prereqs: brewtap, gh, op (1Password CLI), 1Password signed in.
+
+set -euo pipefail
+
+if [[ $# -lt 2 ]]; then
+  echo "usage: $0 <version> <artifact>" >&2
+  exit 2
+fi
+
+cd "$(dirname "$0")/.."
+
+brewtap release \
+  --kind {{.Kind}} \
+  --name {{.Name}} \
+  --version "$1" \
+  --asset "$2"

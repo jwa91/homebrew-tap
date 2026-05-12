@@ -12,3 +12,15 @@
 
 # Local
 *.local
+
+# Build artifacts
+/bin/
+/dist/
+
+# Machine-specific manifest annotations
+tap.local.toml
+
+# Real .env files are forbidden — only .env.template (1P references) is checked in
+.env
+.env.local
+.env.*.local

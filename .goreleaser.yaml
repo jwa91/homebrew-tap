@@ -1,0 +1,78 @@
+version: 2
+
+project_name: jwa-tobrew
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: jwa-tobrew
+    main: ./cmd/jwa-tobrew
+    binary: jwa-tobrew
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:.*$"
+      order: 0
+    - title: Bug fixes
+      regexp: "^.*fix[(\\w)]*:.*$"
+      order: 1
+    - title: Other
+      order: 999
+
+release:
+  github:
+    owner: jwa91
+    name: homebrew-tap
+  draft: false
+  prerelease: auto
+
+# Self-host: write Formula/jwa-tobrew.rb back into this same tap repo.
+# GoReleaser uses GITHUB_TOKEN from env (resolved by `op run --env-file=.env.template`
+# during bootstrap; by `jwa-harden run` thereafter).
+brews:
+  - name: jwa-tobrew
+    description: "Release a project to the personal jwa91/tap Homebrew tap"
+    homepage: "https://github.com/jwa91/homebrew-tap"
+    license: MIT
+    repository:
+      owner: jwa91
+      name: homebrew-tap
+      branch: main
+    directory: Formula
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    dependencies:
+      - name: gh
+    install: |
+      bin.install "jwa-tobrew"
+    test: |
+      system "#{bin}/jwa-tobrew", "version"
