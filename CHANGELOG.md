@@ -17,28 +17,7 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
-### Changed
-
-- **Migrate 4 tap-managing skills (jwa-tobrew, scaffold-cli,
-  tap-alignment, tap-scaffolding) to jwa91/agentskills.** Now installed
-  via `make bootstrap-skills` (agentskills bootstrap). The skill source
-  of truth lives in jwa91/agentskills per ADR 0006; here they are
-  generated artifacts.
-- **Add `bootstrap-skills` Makefile target** pinned to
-  `agentskills@155bd47`. Also adds a `setup` aggregate (`hooks` +
-  `bootstrap-skills`) for fresh clones.
-- **Update align.go** — remove the jwa-tobrew skill-symlink finding
-  (the dir is now generated, not vendored), and add an
-  agentskills-on-PATH check that surfaces a manual install hint when
-  the CLI is missing.
-- **Add `.agents/skills/` and `.claude/skills/` to .gitignore** (tap
-  root only, leading-slash-anchored). Both trees are populated by
-  `make bootstrap-skills`.
-- **Tag scheme for the agentskills CLI** is plain `v*` (was `cli/v*`);
-  per-skill release tags remain `<skill>/v*`. ADR 0006 and the
-  migration plan updated accordingly.
-- **ADR 0005** rewritten to a tap-scoped policy; the universal `.env`
-  / `op://` rule moves upstream to `dotfiles/docs/adr/0001`.
+## [0.3.0] — 2026-05-13
 
 ### Added
 
@@ -66,9 +45,42 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
   - `tap-scaffolding` — maintainer-oriented: how the embedded
     templates are wired, the `init`↔`align` contract, and the recipe
     for adding a new scaffold kind.
+- **`prek.toml`** — pre-commit hook config in prek's native TOML format
+  (works with `pre-commit` too via `.pre-commit-config.yaml`-equivalent
+  semantics). Enforces locally: gofmt + vet + build, gitleaks secret
+  scan, forbid raw `.env*` files (only `.env.template` allowed),
+  `jwa-tobrew align` must report no drift, conventional-commit subject
+  on the commit-msg stage, plus standard whitespace/syntax/large-file
+  guards. Install with `make hooks`.
+- **`.github/CODEOWNERS`** — template that auto-requests review from
+  the owner on every PR. Becomes enforcing once branch protection's
+  "Require review from Code Owners" is enabled.
+- **`make hooks`** target installs prek's git shims.
+- **`tools/jwa-tobrew/manifest_test.go`** — locks in the
+  deps-serialization fix with six representative cases.
 
 ### Changed
 
+- **Migrate 4 tap-managing skills (jwa-tobrew, scaffold-cli,
+  tap-alignment, tap-scaffolding) to jwa91/agentskills.** Now installed
+  via `make bootstrap-skills` (agentskills bootstrap). The skill source
+  of truth lives in jwa91/agentskills per ADR 0006; here they are
+  generated artifacts.
+- **Add `bootstrap-skills` Makefile target** pinned to
+  `agentskills@beb2952`. Also adds a `setup` aggregate (`hooks` +
+  `bootstrap-skills`) for fresh clones.
+- **Update align.go** — remove the jwa-tobrew skill-symlink finding
+  (the dir is now generated, not vendored), and add an
+  agentskills-on-PATH check that surfaces a manual install hint when
+  the CLI is missing.
+- **Add `.agents/skills/` and `.claude/skills/` to .gitignore** (tap
+  root only, leading-slash-anchored). Both trees are populated by
+  `make bootstrap-skills`.
+- **Tag scheme for the agentskills CLI** is plain `v*` (was `cli/v*`);
+  per-skill release tags remain `<skill>/v*`. ADR 0006 and the
+  migration plan updated accordingly.
+- **ADR 0005** rewritten to a tap-scoped policy; the universal `.env`
+  / `op://` rule moves upstream to `dotfiles/docs/adr/0001`.
 - **`jwa-tobrew` skill** rewritten for the current command surface
   (adds `align`; removes outdated step-by-step that pre-dated the
   unified Go release pipeline). Calls out that the
@@ -77,9 +89,6 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 - **Embedded `skill-release.md.tmpl`** updated for Go projects to
   use `goreleaser release --clean` directly (was still pointing at
   the deleted `./scripts/release.sh` for Go).
-
-### Changed
-
 - **Unified Go release pipeline** — Go CLIs now use `.goreleaser.yaml`
   exclusively. `init --kind=go` no longer scaffolds
   `scripts/release.sh`; the local release command is
@@ -95,20 +104,13 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
   the surviving template now uses `jwa-tobrew`.
 - **align (tap mode)** now requires `.goreleaser.yaml` at the tap root
   if the tap embeds a Go CLI (i.e. has `go.mod`).
-
-### Added
-
-- **`prek.toml`** — pre-commit hook config in prek's native TOML format
-  (works with `pre-commit` too via `.pre-commit-config.yaml`-equivalent
-  semantics). Enforces locally: gofmt + vet + build, gitleaks secret
-  scan, forbid raw `.env*` files (only `.env.template` allowed),
-  `jwa-tobrew align` must report no drift, conventional-commit subject
-  on the commit-msg stage, plus standard whitespace/syntax/large-file
-  guards. Install with `make hooks`.
-- **`.github/CODEOWNERS`** — template that auto-requests review from
-  the owner on every PR. Becomes enforcing once branch protection's
-  "Require review from Code Owners" is enabled.
-- **`make hooks`** target installs prek's git shims.
+- **`make bootstrap`** refuses if `v$(VERSION)` already exists at a
+  SHA other than HEAD. The previous `|| true` swallowed the
+  tag-exists error and would have silently shipped an outdated
+  commit.
+- **README Commands block** documents `deps` and `align`; corrects
+  `config` to mention the items-table regeneration; clarifies
+  `upgrade`.
 
 ### Fixed
 
@@ -117,6 +119,15 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
   end-of-file-fixer (no churn loop with prek).
 - **gofmt drift in `ui.go` and `github.go`** — caught by the new
   pre-commit hook on its first run.
+- **`jwa-tobrew config` deps serialization** — bare formula deps
+  (`depends_on "git"`) now serialize as `deps = ["git"]`, not
+  `["\"git\""]`. Cask-style key:value deps unchanged.
+- **`jwa-tobrew config` reports README write** — the items-table
+  update has been wired in since v0.2.0 but `config` printed only
+  two `✓` lines; it now reports the third write explicitly so a
+  failing README path is visible.
+- **Stale legacy binaries** — `bin/brewtap` and `bin/brwtp` removed
+  (leftovers from the pre-`jwa-tobrew` rename).
 
 ## [0.2.0] — 2026-05-13
 
@@ -185,6 +196,7 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 - **Self-hosting GoReleaser config** at `.goreleaser.yaml` writes
   `Formula/jwa-tobrew.rb` back into this same repo on release.
 
-[Unreleased]: https://github.com/jwa91/homebrew-tap/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/jwa91/homebrew-tap/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/jwa91/homebrew-tap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jwa91/homebrew-tap/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jwa91/homebrew-tap/releases/tag/v0.1.0
