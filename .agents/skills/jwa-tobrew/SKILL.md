@@ -1,100 +1,73 @@
 ---
 name: jwa-tobrew
-description: Wire the current project up for releases via a personal Homebrew tap, using the `jwa-tobrew` CLI. Use when the user says "add jwa-tobrew", "publish to my homebrew tap", "make this installable via brew", or asks how to release this project to their personal tap. Handles Go binaries (via GoReleaser), macOS apps (Casks), and other binaries (Formulae).
+description: Use the `jwa-tobrew` CLI to publish a project to the user's personal Homebrew tap (jwa91/tap). Trigger when the user says "publish to my tap", "add to brew", "make this installable via brew", "release this to my tap", or asks about the `jwa-tobrew` command surface. For new project setup walk-throughs, also check the `scaffold-cli` skill; for drift detection, see `tap-alignment`.
 ---
 
-# Add jwa-tobrew to a project
+# jwa-tobrew — publish a project to the personal Homebrew tap
 
-`jwa-tobrew` publishes a project to the user's personal Homebrew tap end-to-end: tag, GitHub Release with auto-generated changelog, asset upload, tap update + commit + push. Source and full docs: <https://github.com/jwa91/homebrew-tap>.
+`jwa-tobrew` is the CLI that owns the tap repo at <https://github.com/jwa91/homebrew-tap>. It publishes Go binaries (via GoReleaser), macOS apps (Casks), and other binaries (Formulae). It is one of the planned `jwa-*` family (`jwa-harden`, `jwa-vps`).
 
-## Security model — important
+## Command surface
 
-`jwa-tobrew` is one of the `jwa-*` family of personal CLIs. **It does not touch 1Password directly.** It expects `$GITHUB_TOKEN` in its environment when it hits the GitHub API and errors clearly otherwise. The canonical way to provide that env is to wrap the invocation with `jwa-harden run` (when that CLI is available) or `op run --env-file=.env.template --` for now.
-
-The full security model lives at `~/dotfiles/docs/security-ground-rules.md` — read it before suggesting any token-handling changes.
-
-## Step 1 — verify prerequisites
-
-```bash
-jwa-tobrew doctor
+```
+jwa-tobrew add <github-url>     Snapshot a published GitHub release into the tap (no token)
+jwa-tobrew align                Report (or --apply) drift from current tap conventions
+jwa-tobrew bump <name> [ver]    Re-sync an existing tap entry to a published release
+jwa-tobrew config               Regenerate tap.toml + tap.local.toml + README items table
+jwa-tobrew deps                 Show dependency overview for every item in the tap
+jwa-tobrew doctor               Check tools, tap location, SSH origin, env
+jwa-tobrew init                 Scaffold release config in the current project
+jwa-tobrew release              Tag, GitHub release, and update the tap (run inside a project)
+jwa-tobrew upgrade              Re-install via brew
 ```
 
-Checks PATH (`gh`, `git`, `goreleaser`), tap location, that the tap origin is SSH, and that `$GITHUB_TOKEN` is reachable. Follow any printed hints before continuing.
+`-h` / `--help` on any subcommand prints flags.
 
-If `jwa-tobrew` isn't installed:
+## Security model
 
-```bash
-brew install jwa91/tap/jwa-tobrew
-```
+`jwa-tobrew` **never touches secret storage directly**. It reads `$GITHUB_TOKEN` from its environment for any command that hits the GitHub API (`release`, `bump`); commands that don't (`add`, `align`, `doctor`, etc.) need no token. Pushes to the tap go over SSH, never HTTPS-with-token (per ADR 0002).
 
-(If the tap isn't bootstrapped on this machine yet, follow the bootstrap section in the tap repo's README.)
+Today the env is supplied by `op run --env-file=.env.template -- jwa-tobrew <cmd>` — the `.env.template` holds `op://` references that are resolved into the child process for the duration of the command. **This is the current bridge, not the eternal pattern**: when `jwa-harden` exists, the canonical wrapper becomes `jwa-harden run -- jwa-tobrew <cmd>`. Don't promote `.env.template` as a permanent contract.
 
-## Step 2 — scaffold the project
+The full security model lives at `~/dotfiles/docs/security-ground-rules.md` and the ADRs at `docs/adr/`. Read those before suggesting any token-handling change.
 
-From inside the project's git repo:
+## Two release patterns the tap accepts
 
-```bash
-jwa-tobrew init
-```
+1. **`jwa-tobrew`-managed** — single-asset items (casks, simple formulas). The CLI tags, releases, hashes, writes the `.rb`, commits to the tap. `bump`/`release` own these.
+2. **Source-repo-managed** — multi-platform Go formulas. The source repo's own `.goreleaser.yaml` has a `brews:` block that writes `Formula/<name>.rb` directly to the tap. `bump`/`release` *refuse* these (they have multiple `url` lines per platform; `jwa-tobrew` would corrupt them). Updates happen via `goreleaser release` in the source repo.
 
-Auto-detects:
+Detection: `AssetCount(.rb body) > 1` ⇒ source-repo-managed.
 
-- **Go** (`go.mod` present) → writes `.goreleaser.yaml` and `scripts/release.sh`. Releases use GoReleaser.
-- **macOS app** (`*.xcodeproj`, `*.xcworkspace`, or `Package.swift`) → writes `scripts/release.sh` for Cask publishing.
+## Scaffolding (per-kind)
+
+`jwa-tobrew init` auto-detects:
+
+- **Go** (`go.mod`) → writes `.goreleaser.yaml` only. Releases via `goreleaser release --clean` (local or CI tag-driven).
+- **macOS app** (`*.xcodeproj`, `*.xcworkspace`, `Package.swift`) → writes `scripts/release.sh` for cask publishing.
 - **Other** → pass `--kind formula` and provide the binary path at release time.
 
-Useful flags: `--name`, `--desc`, `--kind go|cask|formula`, `--force`.
+All kinds also get `.env.template`, `.gitignore` `.env` block, and a project-level release skill at `.agents/skills/release/SKILL.md` (with `.claude` symlink).
 
-## Step 3 — first release
+For deeper walk-through of starting a new CLI from scratch, use the `scaffold-cli` skill.
 
-```bash
-op run --env-file=.env.template -- ./scripts/release.sh 0.1.0                       # Go
-op run --env-file=.env.template -- ./scripts/release.sh 0.1.0 build/MyApp.dmg       # Cask
-op run --env-file=.env.template -- ./scripts/release.sh 0.1.0 build/mytool          # Formula
-```
+## After every item-touching commit
 
-After release: `brew install <tap>/<name>`.
+`add`, `bump`, and `release` all regenerate `tap.toml` and the README items table (between `<!-- BEGIN ITEMS -->` markers) and commit them alongside the `.rb`. There is no separate "refresh README" step.
 
-## Step 4 — subsequent versions
+## Conventions enforced by the repo
 
-Same wrapping + `release.sh` invocation with the new version.
+- Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `perf:`, `build:`, `ci:`, `style:`, `revert:`) — required by the `prek` commit-msg hook
+- Semver tags with `v` prefix (`v0.1.0`)
+- Filename = item name (`Casks/foo.rb` ↔ name `foo`)
+- For Go: `--version` flag must work (GoReleaser ldflags wire `main.version`)
+- ADRs document the *why* for non-obvious choices; `CHANGELOG.md` records every meaningful change
 
-For ad-hoc tap maintenance:
+If a change touches the tap or any project that publishes to it, run `jwa-tobrew align` (or commit through `prek`, which runs it automatically) before considering the change done. See the `tap-alignment` skill.
 
-```bash
-jwa-tobrew bump <name>            # syncs to latest GitHub release
-jwa-tobrew bump <name> 0.4.2      # syncs to a specific version
-```
+## Common errors
 
-## Snapshotting an existing release (no source changes)
-
-```bash
-jwa-tobrew add github.com/SOMEONE/some-cli
-jwa-tobrew add github.com/SOMEONE/some-cli --version 1.2.3 --asset somecli-1.2.3-darwin-arm64.tar.gz
-```
-
-`add` is **token-free** — push to the tap uses plain SSH.
-
-## Conventions
-
-- **Conventional commits** (`feat:`, `fix:`, `docs:`, `chore:`) — GoReleaser groups changelog by these prefixes.
-- **Semver tags** with `v` prefix (`v0.1.0`).
-- One artifact name per project, matching the repo name.
-- For Go projects, expose `--version` so the Formula's `test` block passes (the scaffolded GoReleaser config wires `main.version` via ldflags).
-
-## Token handling
-
-If `$GITHUB_TOKEN` is missing, `jwa-tobrew` errors with `"$GITHUB_TOKEN not set — wrap with: jwa-harden run -- jwa-tobrew <command>"`. Solutions in order of preference:
-
-1. `jwa-harden run -- jwa-tobrew <command>` (canonical, once jwa-harden exists)
-2. `op run --env-file=.env.template -- jwa-tobrew <command>` (current bootstrap option — the tap repo ships an `.env.template`)
-3. Last resort: a transient shell with the env set via `op read`. **Never** export the token to a long-lived shell.
-
-Token rotation is `jwa-harden`'s job, not `jwa-tobrew`'s.
-
-## Troubleshooting
-
-- **"could not locate homebrew-tap clone"** — set `BREWTAP_DIR=/path/to/homebrew-tap`.
-- **"tap origin is HTTPS but jwa-tobrew pushes over SSH only"** — `git -C <tap> remote set-url origin git@github.com:OWNER/REPO.git`.
-- **goreleaser fails with "git is in a dirty state"** — commit or stash before releasing.
-- **Cask install fails with sha256 mismatch** — re-run `jwa-tobrew bump <name>`; the asset was likely re-uploaded.
+- **`$GITHUB_TOKEN not set`** — wrap with `op run --env-file=.env.template --` (or `jwa-harden run --` once it exists).
+- **`tap origin is HTTPS but jwa-tobrew pushes over SSH only`** — `git -C ~/developer/homebrew-tap remote set-url origin git@github.com:OWNER/REPO.git`.
+- **`X.rb has N url lines (multi-platform); jwa-tobrew can't safely bump it`** — this is a source-repo-managed item; release it from its own repo via `goreleaser release`, not from here.
+- **`could not locate homebrew-tap clone`** — `export BREWTAP_DIR=/path/to/homebrew-tap`.
+- **Sha256 mismatch on a fresh install** — `jwa-tobrew bump <name>`; the asset was likely re-uploaded.

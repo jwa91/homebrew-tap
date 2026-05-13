@@ -10,7 +10,8 @@ This project publishes to the personal Homebrew tap via `jwa-tobrew` (kind: **{{
 ## TL;DR
 
 ```bash
-{{if eq .Kind "go"}}op run --env-file=.env.template -- ./scripts/release.sh <version>{{else}}op run --env-file=.env.template -- ./scripts/release.sh <version> <path/to/artifact>{{end}}
+{{if eq .Kind "go"}}git tag -a v<version> -m v<version> && git push origin v<version>
+op run --env-file=.env.template -- goreleaser release --clean{{else}}op run --env-file=.env.template -- ./scripts/release.sh <version> <path/to/artifact>{{end}}
 ```
 
 After it completes, the new version is installable as `brew install jwa91/tap/{{.Name}}`.
@@ -26,14 +27,16 @@ After it completes, the new version is installable as `brew install jwa91/tap/{{
 
 `op run --env-file=.env.template` resolves the `op://` references in `.env.template` and exports the resolved secrets to the child process for the duration of the command. Nothing is written to disk; the secrets exist only in that process tree. Never `export` these tokens to a long-lived shell.
 
-`jwa-tobrew release` then:
+{{if eq .Kind "go"}}For Go projects, GoReleaser is the entire release pipeline (same command runs locally and in CI). It:
+
+1. Verifies HEAD is tagged with the version you intend to release
+2. Builds cross-platform binaries (darwin+linux, amd64+arm64)
+3. Creates a GitHub Release with an auto-generated changelog (grouped by `feat:` / `fix:` conventional-commit prefixes)
+4. Auto-commits `Formula/{{.Name}}.rb` to the homebrew-tap repo via the GitHub API{{else}}`jwa-tobrew release` then:
 
 1. Validates the working tree is clean
 2. Tags `vX.Y.Z` (and pushes the tag over SSH)
-{{if eq .Kind "go"}}3. Hands off to GoReleaser, which:
-   - Builds cross-platform binaries (darwin+linux, amd64+arm64)
-   - Creates a GitHub Release with an auto-generated changelog (grouped by `feat:` / `fix:` conventional-commit prefixes)
-   - Auto-commits `Formula/{{.Name}}.rb` to the homebrew-tap repo via the GitHub API{{else}}3. Creates a GitHub Release with auto-generated changelog and uploads the artifact you passed
+3. Creates a GitHub Release with auto-generated changelog and uploads the artifact you passed
 4. Computes the asset's sha256
 5. Updates `Casks/{{.Name}}.rb` (or `Formula/{{.Name}}.rb`) in the tap repo
 6. Commits and pushes the tap{{end}}

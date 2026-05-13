@@ -17,6 +17,31 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
+### Added
+
+- **Three new agent skills** at `.agents/skills/` (with `.claude/skills/`
+  symlinks):
+  - `tap-alignment` — explains the three-layer convention model
+    (ADRs / `align` rules / prek hooks), the two `align` modes, and
+    how to add a new convention.
+  - `scaffold-cli` — end-to-end walk-through for setting up a new Go
+    CLI publishable via this tap (repo create → `init` → first
+    release locally and via tag-driven CI).
+  - `tap-scaffolding` — maintainer-oriented: how the embedded
+    templates are wired, the `init`↔`align` contract, and the recipe
+    for adding a new scaffold kind.
+
+### Changed
+
+- **`jwa-tobrew` skill** rewritten for the current command surface
+  (adds `align`; removes outdated step-by-step that pre-dated the
+  unified Go release pipeline). Calls out that the
+  `.env.template` + `op://` pattern is the *current bridge* until
+  `jwa-harden` lands, not a permanent contract.
+- **Embedded `skill-release.md.tmpl`** updated for Go projects to
+  use `goreleaser release --clean` directly (was still pointing at
+  the deleted `./scripts/release.sh` for Go).
+
 ### Changed
 
 - **Unified Go release pipeline** — Go CLIs now use `.goreleaser.yaml`
