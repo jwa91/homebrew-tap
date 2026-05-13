@@ -90,6 +90,10 @@ func subFlagSet(name, summary string) *flag.FlagSet {
 }
 
 // parseFlags reorders args so flags can appear after positionals, then parses.
+// Go's stdlib flag package stops at the first non-flag token, which would
+// reject e.g. `jwa-tobrew add github.com/x/y --kind=cask`; this shim makes
+// such interleaved usage work the way most CLIs do.
+//
 // For each "-foo" token, it consults the FlagSet to learn whether the flag
 // takes a value; if so, the next token is treated as that value (unless the
 // flag was passed as "--foo=val"). Anything after "--" is a literal positional.

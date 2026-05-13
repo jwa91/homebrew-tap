@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -155,13 +156,11 @@ func writeNewTapFile(path, kind, name, owner, repo, version, sha, desc, dlURL st
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	// Convert the concrete download URL into a templated form. GitHub's
-	// release path always contains "/v<tag>/", and most asset filenames embed
-	// the version with a "-" or "_" separator.
-	urlTmpl := strings.Replace(dlURL, "/v"+version+"/", "/v#{version}/", 1)
-	urlTmpl = strings.Replace(urlTmpl, "-"+version+".", "-#{version}.", 1)
-	urlTmpl = strings.Replace(urlTmpl, "_"+version+"_", "_#{version}_", 1)
-	urlTmpl = strings.Replace(urlTmpl, "_"+version+".", "_#{version}.", 1)
+	// Convert the concrete download URL into a templated form by replacing
+	// every occurrence of the version that sits between two of the common
+	// separators (/, _, -, .) used in GitHub release paths and asset filenames.
+	verRe := regexp.MustCompile(`([/_-])` + regexp.QuoteMeta(version) + `([/_.])`)
+	urlTmpl := verRe.ReplaceAllString(dlURL, `${1}#{version}${2}`)
 	data := map[string]string{
 		"Name":      name,
 		"ClassName": classNameFor(name),

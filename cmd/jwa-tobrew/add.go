@@ -103,6 +103,14 @@ func runAdd(args []string) error {
 	return nil
 }
 
+// assetExtsByKind lists the asset extensions we recognise for each tap kind,
+// in priority order. Used both to pick an asset for a known kind and to infer
+// the kind from an asset name (inverse lookup).
+var assetExtsByKind = map[string][]string{
+	"cask":    {".dmg", ".pkg", ".zip"},
+	"formula": {".tar.gz", ".tgz"},
+}
+
 func pickAsset(rel *GHRelease, override, kind string) string {
 	if override != "" {
 		for _, a := range rel.Assets {
@@ -112,18 +120,9 @@ func pickAsset(rel *GHRelease, override, kind string) string {
 		}
 		return ""
 	}
-	// kind-driven heuristic: prefer DMG for cask, tarball/binary for formula.
-	if kind == "cask" {
+	for _, ext := range assetExtsByKind[kind] {
 		for _, a := range rel.Assets {
-			if strings.HasSuffix(strings.ToLower(a.Name), ".dmg") {
-				return a.Name
-			}
-		}
-	}
-	if kind == "formula" {
-		for _, a := range rel.Assets {
-			n := strings.ToLower(a.Name)
-			if strings.HasSuffix(n, ".tar.gz") || strings.HasSuffix(n, ".tgz") {
+			if strings.HasSuffix(strings.ToLower(a.Name), ext) {
 				return a.Name
 			}
 		}
@@ -136,11 +135,12 @@ func pickAsset(rel *GHRelease, override, kind string) string {
 
 func inferKindFromAsset(name string) string {
 	n := strings.ToLower(name)
-	switch {
-	case strings.HasSuffix(n, ".dmg"), strings.HasSuffix(n, ".pkg"), strings.HasSuffix(n, ".zip"):
-		return "cask"
-	case strings.HasSuffix(n, ".tar.gz"), strings.HasSuffix(n, ".tgz"):
-		return "formula"
+	for kind, exts := range assetExtsByKind {
+		for _, ext := range exts {
+			if strings.HasSuffix(n, ext) {
+				return kind
+			}
+		}
 	}
 	return ""
 }
