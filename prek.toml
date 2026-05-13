@@ -33,15 +33,6 @@ repo = "https://github.com/gitleaks/gitleaks"
 rev = "v8.21.2"
 hooks = [{ id = "gitleaks" }]
 
-# --- Go ---------------------------------------------------------------
-[[repos]]
-repo = "local"
-hooks = [
-    { id = "go-fmt", name = "gofmt (write)", entry = "gofmt -l -w", language = "system", files = '\.go$' },
-    { id = "go-vet", name = "go vet ./...", entry = "go vet ./...", language = "system", files = '\.go$', pass_filenames = false },
-    { id = "go-build", name = "go build ./...", entry = "go build ./...", language = "system", files = '\.go$', pass_filenames = false },
-]
-
 # --- Tap conventions --------------------------------------------------
 # Each hook is its own table so the entry= shell scripts can use
 # triple-single-quoted literal strings (no escaping headaches).
@@ -58,14 +49,16 @@ entry = '''bash -c 'for f in "$@"; do b=$(basename "$f"); case "$b" in .env.temp
 language = "system"
 pass_filenames = true
 
-# Convention drift detector. Runs the built binary if present (fast);
-# otherwise `go run` (slow but always works).
+# Convention drift detector. Requires `jwa-tobrew` on PATH — install via
+# `brew install jwa91/tap/jwa-tobrew` (or `brew bundle install --file
+# ~/dotfiles/Brewfile`). The source no longer lives in this repo (ADR 0008),
+# so there is no `go run` fallback.
 [[repos.hooks]]
 id = "jwa-tobrew-align"
 name = "jwa-tobrew align (no drift)"
-entry = '''bash -c 'cd "$(git rev-parse --show-toplevel)" && if [ -x bin/jwa-tobrew ]; then ./bin/jwa-tobrew align; else go run ./tools/jwa-tobrew align; fi' '''
+entry = '''bash -c 'cd "$(git rev-parse --show-toplevel)" && command -v jwa-tobrew >/dev/null || { echo "jwa-tobrew not installed: brew install jwa91/tap/jwa-tobrew"; exit 1; }; jwa-tobrew align' '''
 language = "system"
-files = '^(\.agents/skills/|\.claude/skills/|docs/adr/|docs/migration-|Casks/|Formula/|tools/jwa-tobrew/)|^(README|CHANGELOG)\.md$'
+files = '^(\.agents/skills/|\.claude/skills/|docs/adr/|docs/migration-|Casks/|Formula/)|^(README|CHANGELOG)\.md$'
 pass_filenames = false
 
 # --- Commit message ---------------------------------------------------

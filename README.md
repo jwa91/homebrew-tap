@@ -1,7 +1,10 @@
 # homebrew-tap
 
-Personal [Homebrew](https://brew.sh) tap for casks and formulae, plus
-**`jwa-tobrew`** — the CLI that publishes a project here in one command.
+Personal [Homebrew](https://brew.sh) tap for casks and formulae. Pure
+distribution channel — the publisher CLI [`jwa-tobrew`](https://github.com/jwa91/jwa-tobrew)
+and its sibling [`jwa-harden`](https://github.com/jwa91/jwa-harden) each
+live in their own repos and auto-commit their Cask back here on release
+(ADR 0008).
 
 ```bash
 brew tap jwa91/tap
@@ -18,139 +21,78 @@ and re-run, do not edit the table by hand.
 | Name | Kind | Version | Description |
 |------|------|---------|-------------|
 | [agentskills](https://github.com/jwa91/agentskills) | formula | 0.1.0 | Install and manage agent skills inside a project |
+| [jwa-harden](https://github.com/jwa91/jwa-harden) | cask | 0.1.0 | Wrap a command with op run against the nearest .env.template |
+| [jwa-tobrew](https://github.com/jwa91/jwa-tobrew) | cask | 0.4.0 | Release a project to the personal jwa91/tap Homebrew tap |
 | [prehandover](https://github.com/jwa91/prehandover) | formula | 0.1.0 | Unified agent-stop validation for repo-owned agent harness contracts |
 | [trnscrb](https://github.com/jwa91/trnscrb) | cask | 0.4.1 | Drop audio, PDFs, and images onto your menu bar to get markdown back |
 
 ```bash
 brew install jwa91/tap/agentskills
+brew install --cask jwa91/tap/jwa-harden
+brew install --cask jwa91/tap/jwa-tobrew
 brew install jwa91/tap/prehandover
 brew install --cask jwa91/tap/trnscrb
 ```
 
 <!-- END ITEMS -->
 
-## jwa-tobrew
+## How items get here
 
-`jwa-tobrew` automates publishing a project to this tap end-to-end: tag, GitHub
-Release with auto-generated changelog, asset upload, tap update + commit + push.
-It is one of the `jwa-*` family of personal CLIs that share a canonical command
-vocabulary (`add`, `bump`, `release`, `init`, `config`, `doctor`, `upgrade`).
+This tap is a **pure distribution channel** (ADR 0008). The `.rb` files
+under `Casks/` and `Formula/` are auto-committed by sibling repos via
+their own GoReleaser pipelines:
 
-**Secrets**: jwa-tobrew never touches 1Password directly. It reads `$GITHUB_TOKEN`
-from its environment and errors out if the env is empty when the GitHub API is
-needed. Wrap with [`jwa-harden run`](https://github.com/jwa91/homebrew-tap)
-(when that exists) or `op run --env-file=.env.template --` for now.
+| Item | Lives in | Pipeline writes |
+|---|---|---|
+| jwa-tobrew | [`jwa91/jwa-tobrew`](https://github.com/jwa91/jwa-tobrew) | `Casks/jwa-tobrew.rb` |
+| jwa-harden | [`jwa91/jwa-harden`](https://github.com/jwa91/jwa-harden) | `Casks/jwa-harden.rb` |
+| agentskills | [`jwa91/agentskills`](https://github.com/jwa91/agentskills) | `Formula/agentskills.rb` |
+| prehandover | [`jwa91/prehandover`](https://github.com/jwa91/prehandover) | `Formula/prehandover.rb` |
+| trnscrb | [`jwa91/trnscrb`](https://github.com/jwa91/trnscrb) | `Casks/trnscrb.rb` |
 
-See `~/dotfiles/docs/security-ground-rules.md` for the full security model.
-
-### Commands
-
-```
-jwa-tobrew add <github-url>    Snapshot a published GitHub release into the tap (no token)
-jwa-tobrew bump <name> [ver]   Re-sync an existing tap entry to a published release
-jwa-tobrew release             Tag + release a project + update the tap (run inside the project)
-jwa-tobrew init                Scaffold release config in another project
-jwa-tobrew config              Regenerate tap.toml + tap.local.toml + README items table
-jwa-tobrew deps                Show dependency overview for every item in the tap
-jwa-tobrew align               Detect drift between repo state and tap conventions
-jwa-tobrew doctor              Check tools, tap location, SSH origin, env
-jwa-tobrew upgrade             Re-install jwa-tobrew via brew
-```
-
-### Adding a new project
-
-In the project repo:
-
-```bash
-jwa-tobrew doctor       # one-time sanity check
-jwa-tobrew init         # auto-detects Go / Cask / Formula
-```
-
-Then release. The flow differs by kind on purpose — Go projects use
-GoReleaser as the entire pipeline (same command locally and in CI),
-while casks and formulas use a thin `scripts/release.sh` wrapper around
-`jwa-tobrew release`:
-
-```bash
-# Go (after `init --kind=go`):
-op run --env-file=.env.template -- goreleaser release --clean
-
-# Cask / Formula (after `init --kind=cask` or `init --kind=formula`):
-op run --env-file=.env.template -- ./scripts/release.sh 0.1.0 path/to/artifact
-```
-
-For Go projects, GoReleaser handles cross-platform builds, the changelog,
-and auto-commits the Formula here. For Casks (macOS apps) and other
-binaries, jwa-tobrew handles tag → GitHub release → asset upload → tap
-update directly.
-
-### Snapshotting an existing release (no source changes needed)
-
-```bash
-jwa-tobrew add github.com/SOMEONE/some-cli                   # latest release, auto-detect asset
-jwa-tobrew add github.com/SOMEONE/some-cli --version 1.2.3
-jwa-tobrew add github.com/SOMEONE/some-app --kind cask --asset SomeApp.dmg
-```
-
-This requires no token at all — push to the tap is plain SSH.
+To add a new item: in its source repo, run `jwa-tobrew init` (auto-detects
+Go / Cask / Formula) to scaffold the goreleaser config that publishes back
+here. To snapshot somebody else's release into the tap: `jwa-tobrew add
+github.com/SOMEONE/some-cli` — that command writes the `.rb` directly. See
+the [`jwa-tobrew` README](https://github.com/jwa91/jwa-tobrew) for the
+full command surface.
 
 ## tap.toml + tap.local.toml
 
-The `.rb` files in `Casks/` and `Formula/` are the source of truth. `jwa-tobrew config`
-regenerates two computed indexes from them:
+The `.rb` files in `Casks/` and `Formula/` are the source of truth.
+`jwa-tobrew config` regenerates two computed indexes from them plus the
+items table in this README:
 
 - **`tap.toml`** (committed) — manifest of every item in the tap with name, kind,
   source repo, version, and asset pattern. Useful for `jq`-style introspection.
 - **`tap.local.toml`** (gitignored) — annotates each item with whether the source
   repo is locally cloned (and where) on this machine.
 
-## Bootstrapping jwa-tobrew (one-time)
-
-Until the first GitHub release of jwa-tobrew exists, `brew install jwa91/tap/jwa-tobrew`
-won't work. Bootstrap from a local clone of this repo:
-
-```bash
-make install                     # builds and copies to ~/.local/bin/jwa-tobrew
-make bootstrap VERSION=0.1.0     # tags + runs goreleaser to publish v0.1.0
-git pull --rebase                # pull the auto-committed Formula
-brew install jwa91/tap/jwa-tobrew  # now works from anywhere
-```
-
-After bootstrapping, future jwa-tobrew releases use jwa-tobrew itself:
-
-```bash
-op run --env-file=.env.template -- ./bin/jwa-tobrew release --kind go --version 0.2.0
-```
-
 ## Layout
 
-The repo has three top-level areas: items shipped to brew users (`Casks/`
-and `Formula/` — required at root by Homebrew), and the tooling that
-manages them (`tools/`). Everything else is supporting infrastructure
-that documents or generates from those three.
+The tap is intentionally small. The Cask/Formula directories are required
+at the root by Homebrew; everything else is metadata about what gets
+shipped and the conventions sibling repos must follow to ship here.
 
 ```
-Casks/                     Homebrew Casks (macOS apps) — shipped
-Formula/                   Homebrew Formulae (binaries) — shipped
-tools/jwa-tobrew/          jwa-tobrew CLI source — manages the tap
-  templates/               embedded templates for `jwa-tobrew init`
-.agents/skills/            agent skills for working on this repo
-.claude/skills/            symlinks to .agents/skills/ (per-runtime view)
+Casks/                     Homebrew Casks — auto-committed by sibling repos
+Formula/                   Homebrew Formulae — auto-committed by sibling repos
+.agents/skills/            agent skills (gitignored; materialised by `make bootstrap-skills`)
+.claude/skills/            symlinks to .agents/skills/ (gitignored)
 docs/adr/                  architecture decision records
 .env.template              op:// references for GITHUB_TOKEN (no .env files)
-.goreleaser.yaml           publishes jwa-tobrew back into this same tap
 tap.toml                   generated manifest (committed)
 tap.local.toml             generated annotations (gitignored)
 CHANGELOG.md               versioned history of the tap itself
-Makefile                   build / install / bootstrap targets
+Makefile                   skills bootstrap + git hooks only
 ```
 
 ## Versioning
 
 This tap uses [SemVer](https://semver.org) for its own evolution
-(structure, conventions, CLI behaviour) — separate from the versions of
-the items it ships. See [`CHANGELOG.md`](CHANGELOG.md) for the rationale
-behind each tap version, plus an audit trail when conventions change.
+(structure, conventions, ADRs) — separate from the versions of the items
+it ships. See [`CHANGELOG.md`](CHANGELOG.md) for the rationale behind
+each tap version, plus an audit trail when conventions change.
 
 Item versions are tracked individually in their `.rb` files (and mirrored
 into `tap.toml` and the items table above).
@@ -159,6 +101,5 @@ into `tap.toml` and the items table above).
 
 ```bash
 brew update
-brew upgrade --cask trnscrb
-brew upgrade jwa91/tap/jwa-tobrew
+brew upgrade
 ```

@@ -1,44 +1,4 @@
-.PHONY: build install dev bootstrap bootstrap-skills setup clean hooks
-
-BIN_DIR ?= $(HOME)/.local/bin
-
-build:
-	go build -o bin/jwa-tobrew ./tools/jwa-tobrew
-
-install: build
-	install -d $(BIN_DIR)
-	install -m 0755 bin/jwa-tobrew $(BIN_DIR)/jwa-tobrew
-	@echo "installed jwa-tobrew to $(BIN_DIR)/jwa-tobrew"
-	@echo "ensure $(BIN_DIR) is on your PATH"
-
-dev: install
-
-# First-time release: tag, push, run goreleaser. After this, future releases
-# of jwa-tobrew can use `jwa-harden run -- ./bin/jwa-tobrew release --kind go`.
-# This bootstrap target uses `op run` directly because jwa-harden doesn't
-# exist yet — replace once it does.
-#
-# Safety: refuse if v$(VERSION) already exists and points at a SHA other
-# than HEAD. The previous `|| true` swallowed the tag-exists error and
-# silently shipped the OLD tagged commit, not the work on HEAD.
-bootstrap: build
-	@which goreleaser >/dev/null 2>&1 || (echo "install goreleaser: brew install goreleaser" && exit 1)
-	@test -n "$(VERSION)" || (echo "usage: make bootstrap VERSION=0.1.0" && exit 2)
-	@op whoami >/dev/null || (echo "1Password not signed in: op signin" && exit 1)
-	@existing=$$(git rev-parse -q --verify "v$(VERSION)^{commit}" 2>/dev/null); \
-	head=$$(git rev-parse HEAD); \
-	if [ -n "$$existing" ] && [ "$$existing" != "$$head" ]; then \
-	  echo "refusing: v$(VERSION) already exists at $$existing but HEAD is $$head"; \
-	  echo "        re-tag onto HEAD (destructive, push --force-with-lease required)"; \
-	  echo "        or pick a different VERSION."; \
-	  exit 3; \
-	fi; \
-	if [ -z "$$existing" ]; then \
-	  git tag -a v$(VERSION) -m "v$(VERSION)"; \
-	fi
-	git push origin v$(VERSION)
-	op run --env-file=.env.template -- goreleaser release --clean
-	@echo "now pull the auto-committed Formula: git pull --rebase"
+.PHONY: bootstrap-skills setup hooks
 
 # Pinned ref the tap installs from. Policy (ADR 0006 + migration plan):
 # commit a SHA from jwa91/agentskills's main branch. Bumping the pin is
@@ -67,12 +27,10 @@ bootstrap-skills:
 	@echo "tap-managed skills materialised under .agents/skills/ and linked into .claude/skills/"
 
 # Aggregate target for a fresh clone: install git hooks and materialise
-# tap-managed skills. Does NOT depend on `build` — Go builds must not
-# require network access.
+# tap-managed skills. The CLIs themselves (jwa-tobrew, jwa-harden) are
+# installed by `brew bundle install --file=~/dotfiles/Brewfile`, not by
+# this Makefile — the tap is now a pure distribution channel (ADR 0008).
 setup: hooks bootstrap-skills
-
-clean:
-	rm -rf bin dist
 
 # Install prek git hooks. One-time per clone. Hooks run on every commit
 # thereafter; bypass with `git commit --no-verify` (do not, except for

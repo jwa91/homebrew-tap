@@ -15,6 +15,23 @@ desc    = "Install and manage agent skills inside a project"
 deps    = ["git"]
 
 [[items]]
+name    = "jwa-harden"
+kind    = "cask"
+source  = "github.com/jwa91/jwa-harden"
+version = "0.1.0"
+asset   = "jwa-harden_#{version}_darwin_amd64.tar.gz"
+desc    = "Wrap a command with op run against the nearest .env.template"
+
+[[items]]
+name    = "jwa-tobrew"
+kind    = "cask"
+source  = "github.com/jwa91/jwa-tobrew"
+version = "0.4.0"
+asset   = "jwa-tobrew_#{version}_darwin_amd64.tar.gz"
+desc    = "Release a project to the personal jwa91/tap Homebrew tap"
+deps    = ["formula: ["]
+
+[[items]]
 name    = "prehandover"
 kind    = "formula"
 source  = "github.com/jwa91/prehandover"

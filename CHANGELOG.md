@@ -17,6 +17,65 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-13
+
+This release converts the tap into a **pure distribution channel** (ADR
+0008). No more Go source, no more in-tree `.goreleaser.yaml`, no more
+`make bootstrap`. Sibling repos own their own pipelines and auto-commit
+their `.rb` files here.
+
+### Added
+
+- **ADR 0008** — one binary per repo; ship via `homebrew_casks`
+  (modern GoReleaser key replacing the deprecated `brews:`). Documents
+  the namespace separation that resolves the v0.2.0 collision and the
+  shift from Formula to Cask for pre-compiled binaries.
+- **`Casks/jwa-tobrew.rb`** — auto-committed by `jwa91/jwa-tobrew` at
+  v0.4.0, the first cask-shaped release of the publisher CLI.
+- **`Casks/jwa-harden.rb`** — auto-committed by `jwa91/jwa-harden` at
+  v0.1.0. New `jwa-*` family member; wraps a command with `op run`
+  against the nearest `.env.template`. Replaces the long-standing
+  "(when that exists)" placeholder in `jwa-tobrew doctor` and the
+  README.
+
+### Changed
+
+- **Tap role** — narrowed to `Casks/`, `Formula/`, `tap.toml`, ADRs,
+  `.agents/skills/` (gitignored), and tap-meta CHANGELOG/README.
+- **README intro** rewritten to describe the new distribution-channel
+  role and link out to the publisher repos.
+
+### Removed
+
+- **`tools/jwa-tobrew/`** — entire CLI source tree moved to
+  `jwa91/jwa-tobrew`. History prior to v0.3.0 remains here in git
+  history; new commits go to the dedicated repo.
+- **`Formula/jwa-tobrew.rb`** — replaced by `Casks/jwa-tobrew.rb`.
+  End-user `brew install jwa91/tap/jwa-tobrew` is unchanged
+  (modern brew auto-detects cask vs formula in the tap).
+- **`.goreleaser.yaml`** — was used to release the in-tree
+  `jwa-tobrew`; no longer needed.
+- **`go.mod`** — no Go code remains in the tap.
+- **Makefile build/install/dev/bootstrap/clean targets** — gone.
+  Only `bootstrap-skills`, `setup`, and `hooks` remain.
+- **prek `go-fmt` / `go-vet` / `go-build` hooks** — gone (no Go code
+  to lint). The `jwa-tobrew-align` hook now requires the
+  brew-installed binary; the `go run` fallback was removed.
+
+### Fixed
+
+- **ADR 0007** updated to reflect that the tap no longer owns the
+  `jwa-tobrew` publisher source — it owns only the `.rb` files,
+  `tap.toml`, and ADRs.
+
+### Known issues
+
+- `jwa-tobrew config` parses multi-line cask `depends_on` blocks (e.g.
+  `depends_on formula: [\n  "gh",\n]`) as a single truncated string —
+  in `tap.toml` this appears as `deps = ["formula: ["]`. Cosmetic only;
+  the underlying `Casks/*.rb` is correct. Fix queued for the next
+  jwa-tobrew release.
+
 ## [0.3.0] — 2026-05-13
 
 ### Added
@@ -196,7 +255,8 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 - **Self-hosting GoReleaser config** at `.goreleaser.yaml` writes
   `Formula/jwa-tobrew.rb` back into this same repo on release.
 
-[Unreleased]: https://github.com/jwa91/homebrew-tap/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/jwa91/homebrew-tap/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/jwa91/homebrew-tap/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jwa91/homebrew-tap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jwa91/homebrew-tap/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jwa91/homebrew-tap/releases/tag/v0.1.0
