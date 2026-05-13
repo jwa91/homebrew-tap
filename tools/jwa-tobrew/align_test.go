@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -9,8 +10,10 @@ import (
 
 // makeTapSkeleton creates a minimal tap-shaped directory under t.TempDir
 // that detectAlignMode classifies as "tap": it has Casks/ and Formula/
-// directories, plus the .agents/skills/jwa-tobrew + .claude/skills
-// symlink the existing skillSymlinkFindings logic already requires.
+// directories. Tap-managed skills are no longer vendored (ADR 0006 +
+// migration plan) — they're materialised by `make bootstrap-skills`,
+// so no skill dirs or symlinks are created here. The new
+// agentskills-on-PATH finding is exercised separately.
 // Tests then add or remove specific files to assert the new findings.
 func makeTapSkeleton(t *testing.T) string {
 	t.Helper()
@@ -24,14 +27,6 @@ func makeTapSkeleton(t *testing.T) string {
 	must(os.MkdirAll(filepath.Join(dir, "Casks"), 0o755))
 	must(os.MkdirAll(filepath.Join(dir, "Formula"), 0o755))
 	must(os.MkdirAll(filepath.Join(dir, "docs", "adr"), 0o755))
-	// jwa-tobrew skill source + symlink so skillSymlinkFindings stays
-	// quiet; the four new findings are what we want to isolate.
-	must(os.MkdirAll(filepath.Join(dir, ".agents", "skills", "jwa-tobrew"), 0o755))
-	must(os.MkdirAll(filepath.Join(dir, ".claude", "skills"), 0o755))
-	must(os.Symlink(
-		filepath.Join("..", "..", ".agents", "skills", "jwa-tobrew"),
-		filepath.Join(dir, ".claude", "skills", "jwa-tobrew"),
-	))
 	// CHANGELOG + README with markers so those findings stay quiet.
 	must(os.WriteFile(filepath.Join(dir, "CHANGELOG.md"), []byte("# Changelog\n"), 0o644))
 	must(os.WriteFile(
@@ -160,5 +155,65 @@ func TestAlignTap_SecurityGroundRulesSatisfied(t *testing.T) {
 	findings := alignTap(dir)
 	if f := findingFor(findings, "security-ground-rules.md"); f != nil {
 		t.Fatalf("did not expect security-ground-rules finding, got %+v", *f)
+	}
+}
+
+// TestAlignTap_NoJwaTobrewSkillSymlinkFinding verifies that after the
+// agentskills migration, alignTap no longer expects a vendored
+// .agents/skills/jwa-tobrew/ tree or its .claude/skills/jwa-tobrew
+// symlink. Those are now generated artifacts of `make bootstrap-skills`.
+func TestAlignTap_NoJwaTobrewSkillSymlinkFinding(t *testing.T) {
+	dir := makeTapSkeleton(t)
+	findings := alignTap(dir)
+	for _, f := range findings {
+		if strings.Contains(f.Path, filepath.Join(".agents", "skills", "jwa-tobrew")) ||
+			strings.Contains(f.Path, filepath.Join(".claude", "skills", "jwa-tobrew")) {
+			t.Fatalf("unexpected legacy skill finding after migration: %+v", f)
+		}
+	}
+}
+
+// TestAlignTap_AgentskillsOnPATH_Satisfied is a smoke test: when the
+// `agentskills` binary is available on PATH (true in this dev
+// environment per the migration pre-gates), alignTap must not emit the
+// install-agentskills finding.
+func TestAlignTap_AgentskillsOnPATH_Satisfied(t *testing.T) {
+	// Only meaningful if PATH actually contains agentskills; skip on
+	// hosts where it isn't installed (CI without the binary).
+	if _, err := exec.LookPath("agentskills"); err != nil {
+		t.Skip("agentskills not on PATH; skipping satisfied-case smoke test")
+	}
+	dir := makeTapSkeleton(t)
+	findings := alignTap(dir)
+	for _, f := range findings {
+		if strings.Contains(f.Action, "agentskills") {
+			t.Fatalf("did not expect agentskills-on-PATH finding when binary is installed: %+v", f)
+		}
+	}
+}
+
+// TestAlignTap_AgentskillsOnPATH_Missing forces the lookup to fail by
+// setting PATH to a directory that cannot contain `agentskills`, then
+// asserts the finding fires with the expected manual install hint.
+func TestAlignTap_AgentskillsOnPATH_Missing(t *testing.T) {
+	emptyDir := t.TempDir()
+	t.Setenv("PATH", emptyDir)
+	dir := makeTapSkeleton(t)
+	findings := alignTap(dir)
+	var hit *alignFinding
+	for i := range findings {
+		if strings.Contains(findings[i].Action, "agentskills") {
+			hit = &findings[i]
+			break
+		}
+	}
+	if hit == nil {
+		t.Fatalf("expected agentskills-on-PATH finding, got: %v", findings)
+	}
+	if !strings.Contains(hit.Action, "brew install jwa91/tap/agentskills") {
+		t.Errorf("finding should suggest brew install: %q", hit.Action)
+	}
+	if hit.Apply != nil {
+		t.Errorf("agentskills-on-PATH finding must be manual-only (Apply == nil)")
 	}
 }

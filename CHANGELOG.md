@@ -19,6 +19,21 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ### Changed
 
+- **Migrate 4 tap-managing skills (jwa-tobrew, scaffold-cli,
+  tap-alignment, tap-scaffolding) to jwa91/agentskills.** Now installed
+  via `make bootstrap-skills` (agentskills bootstrap). The skill source
+  of truth lives in jwa91/agentskills per ADR 0006; here they are
+  generated artifacts.
+- **Add `bootstrap-skills` Makefile target** pinned to
+  `agentskills@155bd47`. Also adds a `setup` aggregate (`hooks` +
+  `bootstrap-skills`) for fresh clones.
+- **Update align.go** — remove the jwa-tobrew skill-symlink finding
+  (the dir is now generated, not vendored), and add an
+  agentskills-on-PATH check that surfaces a manual install hint when
+  the CLI is missing.
+- **Add `.agents/skills/` and `.claude/skills/` to .gitignore** (tap
+  root only, leading-slash-anchored). Both trees are populated by
+  `make bootstrap-skills`.
 - **Tag scheme for the agentskills CLI** is plain `v*` (was `cli/v*`);
   per-skill release tags remain `<skill>/v*`. ADR 0006 and the
   migration plan updated accordingly.

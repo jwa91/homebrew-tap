@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -155,7 +156,20 @@ func skillSymlinkFindings(root, name string) []alignFinding {
 
 func alignTap(dir string) []alignFinding {
 	var f []alignFinding
-	f = append(f, skillSymlinkFindings(dir, "jwa-tobrew")...)
+
+	// ADR 0006: the tap-managed skills are materialised by
+	// `make bootstrap-skills` (which invokes `agentskills bootstrap`),
+	// not vendored. Drift here means the bootstrap mechanism is
+	// missing, not that a specific directory is absent: the skill dirs
+	// are generated-and-gitignored. Check that the CLI is reachable so
+	// `make bootstrap-skills` can run; the user installs it via
+	// `brew install jwa91/tap/agentskills`.
+	if _, err := exec.LookPath("agentskills"); err != nil {
+		f = append(f, alignFinding{
+			Path:   ".agents/skills/",
+			Action: "missing `agentskills` on PATH — install via `brew install jwa91/tap/agentskills`, then run `make bootstrap-skills`",
+		})
+	}
 
 	if !exists(filepath.Join(dir, "docs", "adr")) {
 		f = append(f, alignFinding{

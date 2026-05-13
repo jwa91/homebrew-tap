@@ -25,3 +25,12 @@ tap.local.toml
 .env
 .env.local
 .env.*.local
+
+# Tap-managed skills are materialised by `make bootstrap-skills`, which
+# invokes `agentskills bootstrap` against jwa91/agentskills. The skill
+# content lives there; here it's a generated artifact (ADR 0006).
+# .claude/skills may exist as a directory (legacy) or as a single
+# symlink to ../.agents/skills (current `agentskills link` shape) — the
+# no-trailing-slash form covers both.
+/.agents/skills/
+/.claude/skills
