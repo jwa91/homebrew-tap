@@ -44,5 +44,6 @@ func runConfig(args []string) error {
 	}
 	ok("wrote tap.toml")
 	ok("wrote tap.local.toml")
+	ok("updated README.md items section")
 	return nil
 }

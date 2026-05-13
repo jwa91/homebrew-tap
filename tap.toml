@@ -6,6 +6,15 @@ owner = "jwa91"
 name  = "tap"
 
 [[items]]
+name    = "agentskills"
+kind    = "formula"
+source  = "github.com/jwa91/agentskills"
+version = "0.1.0"
+asset   = "agentskills_Darwin_x86_64.tar.gz"
+desc    = "Install and manage agent skills inside a project"
+deps    = ["git"]
+
+[[items]]
 name    = "prehandover"
 kind    = "formula"
 source  = "github.com/jwa91/prehandover"

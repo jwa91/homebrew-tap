@@ -17,11 +17,25 @@ dev: install
 # of jwa-tobrew can use `jwa-harden run -- ./bin/jwa-tobrew release --kind go`.
 # This bootstrap target uses `op run` directly because jwa-harden doesn't
 # exist yet — replace once it does.
+#
+# Safety: refuse if v$(VERSION) already exists and points at a SHA other
+# than HEAD. The previous `|| true` swallowed the tag-exists error and
+# silently shipped the OLD tagged commit, not the work on HEAD.
 bootstrap: build
 	@which goreleaser >/dev/null 2>&1 || (echo "install goreleaser: brew install goreleaser" && exit 1)
 	@test -n "$(VERSION)" || (echo "usage: make bootstrap VERSION=0.1.0" && exit 2)
 	@op whoami >/dev/null || (echo "1Password not signed in: op signin" && exit 1)
-	git tag -a v$(VERSION) -m "v$(VERSION)" || true
+	@existing=$$(git rev-parse -q --verify "v$(VERSION)^{commit}" 2>/dev/null); \
+	head=$$(git rev-parse HEAD); \
+	if [ -n "$$existing" ] && [ "$$existing" != "$$head" ]; then \
+	  echo "refusing: v$(VERSION) already exists at $$existing but HEAD is $$head"; \
+	  echo "        re-tag onto HEAD (destructive, push --force-with-lease required)"; \
+	  echo "        or pick a different VERSION."; \
+	  exit 3; \
+	fi; \
+	if [ -z "$$existing" ]; then \
+	  git tag -a v$(VERSION) -m "v$(VERSION)"; \
+	fi
 	git push origin v$(VERSION)
 	op run --env-file=.env.template -- goreleaser release --clean
 	@echo "now pull the auto-committed Formula: git pull --rebase"
@@ -34,7 +48,7 @@ bootstrap: build
 # would re-create the dual-source-of-truth drift ADR 0006 exists to
 # prevent. Per-skill tags (`<skill>/vX.Y.Z`) cannot compose into a
 # single `--ref` call (agentskills bootstrap takes one ref).
-AGENTSKILLS_REF ?= 155bd475f9c608c2f9240f0dfb20f3c102211f1a
+AGENTSKILLS_REF ?= beb2952275c0b1dfa05d75093b3d6e7fb960f706
 
 # Populate .agents/skills/ from the agentskills repo. Idempotent — safe
 # to re-run on a fresh clone or after pulling. .agents/skills/ and

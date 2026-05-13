@@ -17,10 +17,12 @@ and re-run, do not edit the table by hand.
 
 | Name | Kind | Version | Description |
 |------|------|---------|-------------|
+| [agentskills](https://github.com/jwa91/agentskills) | formula | 0.1.0 | Install and manage agent skills inside a project |
 | [prehandover](https://github.com/jwa91/prehandover) | formula | 0.1.0 | Unified agent-stop validation for repo-owned agent harness contracts |
 | [trnscrb](https://github.com/jwa91/trnscrb) | cask | 0.4.1 | Drop audio, PDFs, and images onto your menu bar to get markdown back |
 
 ```bash
+brew install jwa91/tap/agentskills
 brew install jwa91/tap/prehandover
 brew install --cask jwa91/tap/trnscrb
 ```
@@ -48,9 +50,11 @@ jwa-tobrew add <github-url>    Snapshot a published GitHub release into the tap 
 jwa-tobrew bump <name> [ver]   Re-sync an existing tap entry to a published release
 jwa-tobrew release             Tag + release a project + update the tap (run inside the project)
 jwa-tobrew init                Scaffold release config in another project
-jwa-tobrew config              Regenerate tap.toml + tap.local.toml
+jwa-tobrew config              Regenerate tap.toml + tap.local.toml + README items table
+jwa-tobrew deps                Show dependency overview for every item in the tap
+jwa-tobrew align               Detect drift between repo state and tap conventions
 jwa-tobrew doctor              Check tools, tap location, SSH origin, env
-jwa-tobrew upgrade             Re-install via brew
+jwa-tobrew upgrade             Re-install jwa-tobrew via brew
 ```
 
 ### Adding a new project

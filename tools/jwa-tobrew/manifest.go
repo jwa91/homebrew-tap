@@ -129,13 +129,18 @@ func findRepoRefInBody(body string) (owner, repo string, err error) {
 }
 
 // tidyDep collapses whitespace in a depends_on argument list and trims
-// trailing comments / empty fragments.
+// trailing comments / empty fragments. If the result is a single bare
+// quoted string (the common Formula form `depends_on "git"`), strip the
+// surrounding quotes so the manifest serializer doesn't re-wrap it.
 func tidyDep(s string) string {
 	if i := strings.Index(s, "#"); i >= 0 {
 		s = s[:i]
 	}
 	s = strings.TrimSpace(s)
 	s = strings.Join(strings.Fields(s), " ")
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' && !strings.ContainsAny(s[1:len(s)-1], `"`) {
+		s = s[1 : len(s)-1]
+	}
 	return s
 }
 
