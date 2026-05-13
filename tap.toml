@@ -9,8 +9,8 @@ name  = "tap"
 name    = "agentskills"
 kind    = "cask"
 source  = "github.com/jwa91/agentskills"
-version = "0.1.2"
-asset   = "agentskills_Darwin_x86_64.tar.gz"
+version = "0.1.4"
+asset   = "agentskills_#{version}_darwin_amd64.tar.gz"
 desc    = "Install and manage agent skills inside a project"
 deps    = ["formula: ["]
 
@@ -18,7 +18,7 @@ deps    = ["formula: ["]
 name    = "jwa-harden"
 kind    = "cask"
 source  = "github.com/jwa91/jwa-harden"
-version = "0.1.3"
+version = "0.1.5"
 asset   = "jwa-harden_#{version}_darwin_amd64.tar.gz"
 desc    = "Wrap a command with op run against the nearest .env.template"
 
@@ -26,7 +26,7 @@ desc    = "Wrap a command with op run against the nearest .env.template"
 name    = "jwa-tobrew"
 kind    = "cask"
 source  = "github.com/jwa91/jwa-tobrew"
-version = "0.4.3"
+version = "0.5.0"
 asset   = "jwa-tobrew_#{version}_darwin_amd64.tar.gz"
 desc    = "Release a project to the personal jwa91/tap Homebrew tap"
 deps    = ["formula: ["]
@@ -35,8 +35,8 @@ deps    = ["formula: ["]
 name    = "prehandover"
 kind    = "cask"
 source  = "github.com/jwa91/prehandover"
-version = "0.1.1"
-asset   = "prehandover_Darwin_x86_64.tar.gz"
+version = "0.1.2"
+asset   = "prehandover_#{version}_darwin_amd64.tar.gz"
 desc    = "Unified agent-stop validation for repo-owned agent harness contracts"
 
 [[items]]
