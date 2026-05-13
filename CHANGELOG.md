@@ -30,6 +30,9 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 - **Release skill ownership clarified**: project release skills are installed
   from `agentskills`, while `jwa-tobrew init` owns only release config
   scaffolding and process-level calls to `agentskills`.
+- **Generated tap index refreshed** for `agentskills` v0.1.2,
+  `jwa-harden` v0.1.3, and `jwa-tobrew` v0.4.3 after `jwa-tobrew config`
+  found README / `tap.toml` drift.
 
 ## [0.4.1] — 2026-05-13
 
@@ -57,8 +60,6 @@ used anywhere in the family.
 - **README Layout** notes `Formula/` is empty by design as of this
   release; future items in the family default to Casks.
 - **`tap.toml`** regenerated to reflect the new Cask shapes.
-
-### Known issues
 
 - `jwa-tobrew config` still renders multi-line cask `depends_on` blocks
   (e.g. `depends_on formula: [\n  "gh",\n]`) as the truncated string
@@ -116,8 +117,6 @@ their `.rb` files here.
 - **ADR 0007** updated to reflect that the tap no longer owns the
   `jwa-tobrew` publisher source — it owns only the `.rb` files,
   `tap.toml`, and ADRs.
-
-### Known issues
 
 - `jwa-tobrew config` parses multi-line cask `depends_on` blocks (e.g.
   `depends_on formula: [\n  "gh",\n]`) as a single truncated string —
