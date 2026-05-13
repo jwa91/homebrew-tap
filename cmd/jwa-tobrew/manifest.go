@@ -83,30 +83,33 @@ func parseTapFile(path, kind string) (Item, error) {
 	if err != nil {
 		return Item{}, err
 	}
-	name := strings.TrimSuffix(filepath.Base(path), ".rb")
-	it := Item{Name: name, Kind: kind}
-	if m := versionLineRE.FindStringSubmatch(string(body)); m != nil {
+	s := string(body)
+	it := Item{
+		Name: strings.TrimSuffix(filepath.Base(path), ".rb"),
+		Kind: kind,
+	}
+	if m := versionLineRE.FindStringSubmatch(s); m != nil {
 		it.Version = m[1]
 	}
-	if m := urlLineRE.FindStringSubmatch(string(body)); m != nil {
+	if m := urlLineRE.FindStringSubmatch(s); m != nil {
 		it.URL = m[1]
 		it.Asset = filepath.Base(m[1])
 	}
-	if m := descLineRE.FindStringSubmatch(string(body)); m != nil {
+	if m := descLineRE.FindStringSubmatch(s); m != nil {
 		it.Desc = m[1]
 	}
-	if m := homepageLineRE.FindStringSubmatch(string(body)); m != nil {
+	if m := homepageLineRE.FindStringSubmatch(s); m != nil {
 		it.Homepage = m[1]
 	}
-	if owner, repo, err := findRepoRefInBody(string(body)); err == nil {
+	if owner, repo, err := findRepoRefInBody(s); err == nil {
 		it.Source = "github.com/" + owner + "/" + repo
 	}
-	for _, m := range dependsOnRE.FindAllStringSubmatch(string(body), -1) {
+	for _, m := range dependsOnRE.FindAllStringSubmatch(s, -1) {
 		if dep := tidyDep(m[1]); dep != "" {
 			it.Deps = append(it.Deps, dep)
 		}
 	}
-	for _, m := range dependsRE.FindAllStringSubmatch(string(body), -1) {
+	for _, m := range dependsRE.FindAllStringSubmatch(s, -1) {
 		it.Deps = append(it.Deps, m[1])
 	}
 	return it, nil
