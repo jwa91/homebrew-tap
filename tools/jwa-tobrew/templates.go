@@ -5,11 +5,12 @@ import _ "embed"
 //go:embed templates/goreleaser.yaml.tmpl
 var goreleaserTmpl string
 
-//go:embed templates/release-go.sh.tmpl
+// Used for cask + formula scaffolds. Go projects use .goreleaser.yaml
+// directly (no shell wrapper) so they have a unified release pipeline
+// across local + CI runs.
+//
+//go:embed templates/release.sh.tmpl
 var releaseShTmpl string
-
-//go:embed templates/release-cask.sh.tmpl
-var releaseShCaskTmpl string
 
 //go:embed templates/cask.rb.tmpl
 var caskRbTmpl string

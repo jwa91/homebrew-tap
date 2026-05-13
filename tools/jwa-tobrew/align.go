@@ -182,6 +182,16 @@ func alignTap(dir string) []alignFinding {
 			Action: "missing — create a Keep-a-Changelog file to version this tap's evolution",
 		})
 	}
+
+	// If the tap embeds a Go CLI (its own go.mod at root), it must
+	// publish itself the same way every other Go CLI does — via
+	// .goreleaser.yaml.
+	if exists(filepath.Join(dir, "go.mod")) && !exists(filepath.Join(dir, ".goreleaser.yaml")) {
+		f = append(f, alignFinding{
+			Path:   ".goreleaser.yaml",
+			Action: "missing — tap embeds a Go CLI; required to publish it back to the tap",
+		})
+	}
 	return f
 }
 
@@ -209,17 +219,28 @@ func alignProject(dir string) []alignFinding {
 
 	f = append(f, skillSymlinkFindings(dir, "release")...)
 
-	if !exists(filepath.Join(dir, "scripts", "release.sh")) {
-		f = append(f, alignFinding{
-			Path:   "scripts/release.sh",
-			Action: "missing — run `jwa-tobrew init` to scaffold (cask/formula/go variants)",
-		})
-	}
-	if exists(filepath.Join(dir, "go.mod")) && !exists(filepath.Join(dir, ".goreleaser.yaml")) {
-		f = append(f, alignFinding{
-			Path:   ".goreleaser.yaml",
-			Action: "missing — run `jwa-tobrew init --kind=go` to scaffold",
-		})
+	// Per-kind release contract:
+	//   Go             → .goreleaser.yaml (no shell wrapper; goreleaser is
+	//                    the pipeline — same for local and CI).
+	//   Cask / Formula → scripts/release.sh (wraps `jwa-tobrew release`).
+	// detectKind only returns "go" or "cask"; formula has no file marker
+	// so its contract isn't enforced here (would be in a future doctor
+	// pass that reads the .rb file in the tap).
+	switch detectKind(dir) {
+	case "go":
+		if !exists(filepath.Join(dir, ".goreleaser.yaml")) {
+			f = append(f, alignFinding{
+				Path:   ".goreleaser.yaml",
+				Action: "missing — required for all Go CLIs (run `jwa-tobrew init --kind=go`)",
+			})
+		}
+	case "cask":
+		if !exists(filepath.Join(dir, "scripts", "release.sh")) {
+			f = append(f, alignFinding{
+				Path:   "scripts/release.sh",
+				Action: "missing — run `jwa-tobrew init --kind=cask` to scaffold",
+			})
+		}
 	}
 	return f
 }

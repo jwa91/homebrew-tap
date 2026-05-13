@@ -58,14 +58,27 @@ jwa-tobrew upgrade             Re-install via brew
 In the project repo:
 
 ```bash
-jwa-tobrew doctor                                        # one-time sanity check
-jwa-tobrew init                                          # auto-detects Go / Cask / Formula
-op run --env-file=.env.template -- ./scripts/release.sh 0.1.0 [path/to/artifact]
+jwa-tobrew doctor       # one-time sanity check
+jwa-tobrew init         # auto-detects Go / Cask / Formula
 ```
 
-For Go projects, GoReleaser handles cross-platform builds, the changelog, and
-auto-commits the Formula here. For Casks (macOS apps) and other binaries,
-jwa-tobrew handles tag → GitHub release → asset upload → tap update directly.
+Then release. The flow differs by kind on purpose — Go projects use
+GoReleaser as the entire pipeline (same command locally and in CI),
+while casks and formulas use a thin `scripts/release.sh` wrapper around
+`jwa-tobrew release`:
+
+```bash
+# Go (after `init --kind=go`):
+op run --env-file=.env.template -- goreleaser release --clean
+
+# Cask / Formula (after `init --kind=cask` or `init --kind=formula`):
+op run --env-file=.env.template -- ./scripts/release.sh 0.1.0 path/to/artifact
+```
+
+For Go projects, GoReleaser handles cross-platform builds, the changelog,
+and auto-commits the Formula here. For Casks (macOS apps) and other
+binaries, jwa-tobrew handles tag → GitHub release → asset upload → tap
+update directly.
 
 ### Snapshotting an existing release (no source changes needed)
 

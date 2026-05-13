@@ -60,9 +60,14 @@ func detectKind(dir string) string {
 	return ""
 }
 
-// scaffold writes the release config for a single project kind. The Go kind
-// additionally writes .goreleaser.yaml and uses a different release.sh
-// template; cask and formula share the cask-style release.sh.
+// scaffold writes the release config for a single project kind.
+//
+// Go projects get a .goreleaser.yaml only — GoReleaser is the entire
+// release pipeline (run locally as `goreleaser release` or in a tag-
+// triggered GitHub Action), so a shell wrapper would just be one more
+// thing to drift. Cask + Formula projects get scripts/release.sh
+// because they aren't built by GoReleaser; the script wraps
+// `jwa-tobrew release` with the right --kind/--name flags.
 func scaffold(kind, dir, owner, repo, name, desc string, force bool) error {
 	data := map[string]string{
 		"Owner": owner,
@@ -72,33 +77,34 @@ func scaffold(kind, dir, owner, repo, name, desc string, force bool) error {
 		"Kind":  kind,
 	}
 
-	releaseShPath := filepath.Join(dir, "scripts", "release.sh")
-	releaseShTemplate := releaseShCaskTmpl
-	if kind == "go" {
-		releaseShTemplate = releaseShTmpl
+	switch kind {
+	case "go":
 		if err := writeTemplate(filepath.Join(dir, ".goreleaser.yaml"), goreleaserTmpl, data, force); err != nil {
 			return err
 		}
+	case "cask", "formula":
+		releaseShPath := filepath.Join(dir, "scripts", "release.sh")
+		if err := writeTemplate(releaseShPath, releaseShTmpl, data, force); err != nil {
+			return err
+		}
+		_ = os.Chmod(releaseShPath, 0o755)
 	}
-	if err := writeTemplate(releaseShPath, releaseShTemplate, data, force); err != nil {
-		return err
-	}
-	_ = os.Chmod(releaseShPath, 0o755)
+
 	if err := writeAuxiliary(dir, data, force); err != nil {
 		return err
 	}
 
 	switch kind {
 	case "go":
-		ok("scaffolded Go release config")
+		ok("scaffolded Go release config (.goreleaser.yaml)")
 		hint("formula will be published to %s/homebrew-tap as Formula/%s.rb", owner, name)
 		hint("install GoReleaser: brew install goreleaser")
-		hint("first release: op run --env-file=.env.template -- ./scripts/release.sh 0.1.0")
+		hint("first release: op run --env-file=.env.template -- goreleaser release --clean")
 	case "cask":
-		ok("scaffolded Cask release config")
+		ok("scaffolded Cask release config (scripts/release.sh)")
 		hint("usage: op run --env-file=.env.template -- ./scripts/release.sh <version> <path/to/artifact.dmg>")
 	case "formula":
-		ok("scaffolded Formula release config")
+		ok("scaffolded Formula release config (scripts/release.sh)")
 		hint("usage: op run --env-file=.env.template -- ./scripts/release.sh <version> <path/to/binary-or-tarball>")
 	}
 	return nil

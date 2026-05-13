@@ -17,6 +17,24 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
+### Changed
+
+- **Unified Go release pipeline** — Go CLIs now use `.goreleaser.yaml`
+  exclusively. `init --kind=go` no longer scaffolds
+  `scripts/release.sh`; the local release command is
+  `goreleaser release --clean` (wrapped by `op run`), matching the
+  CI tag-driven flow. align enforces this: Go project missing
+  `.goreleaser.yaml` → fail; cask/formula missing
+  `scripts/release.sh` → fail. Closes the false positive previously
+  reported against repos like `prehandover` that publish to this tap
+  via their own GoReleaser `brews:` block.
+- **Renamed** `templates/release-cask.sh.tmpl` → `templates/release.sh.tmpl`
+  (used for both cask and formula). Removed `templates/release-go.sh.tmpl`
+  entirely. Both old templates also incorrectly referenced `brewtap` —
+  the surviving template now uses `jwa-tobrew`.
+- **align (tap mode)** now requires `.goreleaser.yaml` at the tap root
+  if the tap embeds a Go CLI (i.e. has `go.mod`).
+
 ### Added
 
 - **`prek.toml`** — pre-commit hook config in prek's native TOML format
