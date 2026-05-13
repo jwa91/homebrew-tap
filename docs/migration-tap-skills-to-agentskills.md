@@ -12,10 +12,11 @@ into this tap), one direction at the install level (this tap's bootstrap invokes
 `agentskills bootstrap …`). Skill content is **never** embedded in the Go
 binary — it is fetched at install time from `jwa91/agentskills`.
 
-This is a planner-only document. Nothing here is executed by writing this file.
-The four SKILL.md files and `tools/jwa-tobrew/align.go` are deliberately left
-untouched; the planned edits below describe what a future migration commit must
-do.
+**Status: executed 2026-05-13** in homebrew-tap commit `f65616c` and agentskills
+commit `155bd47`. The snippets and notes below were reconciled against the
+shipped `Makefile` / `.gitignore` after execution — they now describe what was
+actually done. If you find a discrepancy between this doc and the committed
+files, the committed files are the source of truth.
 
 ---
 
@@ -254,11 +255,11 @@ dev bootstrap clean hooks` — extend it):
 # (`AGENTSKILLS_REF=main make bootstrap-skills`) for local development,
 # but the committed default must never be `main` — that would re-create
 # the dual-source-of-truth drift ADR 0006 exists to prevent.
-# AGENTSKILLS_REF ?= <SHA — set after v0.1.0>
+AGENTSKILLS_REF ?= 155bd475f9c608c2f9240f0dfb20f3c102211f1a
 
 # Populate .agents/skills/ from the agentskills repo. Idempotent — safe to
 # re-run on a fresh clone or after pulling. .agents/skills/ and
-# .claude/skills/ are gitignored; this target is how they get created.
+# .claude/skills are gitignored; this target is how they get created.
 bootstrap-skills:
 	@which agentskills >/dev/null 2>&1 || (echo "install: brew install jwa91/tap/agentskills" && exit 1)
 	agentskills bootstrap \
@@ -267,8 +268,9 @@ bootstrap-skills:
 	  --skill tap-alignment \
 	  --skill tap-scaffolding \
 	  --ref $(AGENTSKILLS_REF) \
-	  --mode copy
-	agentskills link --harness claude
+	  --mode copy \
+	  --force
+	agentskills link --project . --harness anthropic --force
 	@echo "tap-managed skills materialised under .agents/skills/ and linked into .claude/skills/"
 ```
 
@@ -280,22 +282,29 @@ Notes:
   from a working tree. Don't make it a dependency of `build` — Go builds
   must not require network access.
 - `--mode copy` is the default per the briefing; explicit for documentation.
+- `--force` on both `bootstrap` and `link` is required for idempotency:
+  without it, re-running the target on an already-populated tree errors
+  ("destination already exists"). With `--force`, second runs are clean
+  no-ops.
 - `--ref $(AGENTSKILLS_REF)` pins a SHA from `jwa91/agentskills`'s
   `main` branch (see Decisions for rationale). The agentskills CLI's
   own default of `main` does **not** apply here: an unpinned default
   in a committed Makefile would let an upstream push silently change
   what a fresh tap clone bootstraps.
-- `agentskills link --harness claude` re-creates the `.claude/skills/<name>
-  → ../../.agents/skills/<name>` symlinks. Adapter table lives inside the
-  CLI (`internal/harness/harness_adapters.json` per briefing).
+- `agentskills link --project . --harness anthropic` creates a **single**
+  symlink `.claude/skills → ../.agents/skills`, not per-skill symlinks
+  (the legacy shape was per-skill; the current CLI uses one symlink to
+  the parent). The harness key is `anthropic` (not `claude`) — adapter
+  table is in `internal/harness/harness_adapters.json`.
 
 ---
 
 ## .gitignore additions
 
 Append to `/Users/jw/developer/homebrew-tap/.gitignore` (after the existing
-"Real .env files are forbidden" block). The whole `.agents/skills/` and
-`.claude/skills/` trees become generated artifacts of `make bootstrap-skills`.
+"Real .env files are forbidden" block). The whole `.agents/skills/` tree
+and the `.claude/skills` symlink become generated artifacts of
+`make bootstrap-skills`.
 
 Exact lines to add:
 
@@ -304,8 +313,11 @@ Exact lines to add:
 # Tap-managed skills are materialised by `make bootstrap-skills`, which
 # invokes `agentskills bootstrap` against jwa91/agentskills. The skill
 # content lives there; here it's a generated artifact (ADR 0006).
+# .claude/skills may exist as a directory (legacy) or as a single
+# symlink to ../.agents/skills (current `agentskills link` shape) — the
+# no-trailing-slash form covers both.
 /.agents/skills/
-/.claude/skills/
+/.claude/skills
 ```
 
 Notes:
