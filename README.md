@@ -20,17 +20,17 @@ and re-run, do not edit the table by hand.
 
 | Name | Kind | Version | Description |
 |------|------|---------|-------------|
-| [agentskills](https://github.com/jwa91/agentskills) | formula | 0.1.0 | Install and manage agent skills inside a project |
-| [jwa-harden](https://github.com/jwa91/jwa-harden) | cask | 0.1.0 | Wrap a command with op run against the nearest .env.template |
-| [jwa-tobrew](https://github.com/jwa91/jwa-tobrew) | cask | 0.4.0 | Release a project to the personal jwa91/tap Homebrew tap |
-| [prehandover](https://github.com/jwa91/prehandover) | formula | 0.1.0 | Unified agent-stop validation for repo-owned agent harness contracts |
+| [agentskills](https://github.com/jwa91/agentskills) | cask | 0.1.1 | Install and manage agent skills inside a project |
+| [jwa-harden](https://github.com/jwa91/jwa-harden) | cask | 0.1.2 | Wrap a command with op run against the nearest .env.template |
+| [jwa-tobrew](https://github.com/jwa91/jwa-tobrew) | cask | 0.4.2 | Release a project to the personal jwa91/tap Homebrew tap |
+| [prehandover](https://github.com/jwa91/prehandover) | cask | 0.1.1 | Unified agent-stop validation for repo-owned agent harness contracts |
 | [trnscrb](https://github.com/jwa91/trnscrb) | cask | 0.4.1 | Drop audio, PDFs, and images onto your menu bar to get markdown back |
 
 ```bash
-brew install jwa91/tap/agentskills
+brew install --cask jwa91/tap/agentskills
 brew install --cask jwa91/tap/jwa-harden
 brew install --cask jwa91/tap/jwa-tobrew
-brew install jwa91/tap/prehandover
+brew install --cask jwa91/tap/prehandover
 brew install --cask jwa91/tap/trnscrb
 ```
 
@@ -40,14 +40,16 @@ brew install --cask jwa91/tap/trnscrb
 
 This tap is a **pure distribution channel** (ADR 0008). The `.rb` files
 under `Casks/` and `Formula/` are auto-committed by sibling repos via
-their own GoReleaser pipelines:
+their own GoReleaser pipelines. Every Go CLI in the family now ships as
+a **Cask** (modern `homebrew_casks:` block) with Developer ID signing +
+notarization:
 
 | Item | Lives in | Pipeline writes |
 |---|---|---|
 | jwa-tobrew | [`jwa91/jwa-tobrew`](https://github.com/jwa91/jwa-tobrew) | `Casks/jwa-tobrew.rb` |
 | jwa-harden | [`jwa91/jwa-harden`](https://github.com/jwa91/jwa-harden) | `Casks/jwa-harden.rb` |
-| agentskills | [`jwa91/agentskills`](https://github.com/jwa91/agentskills) | `Formula/agentskills.rb` |
-| prehandover | [`jwa91/prehandover`](https://github.com/jwa91/prehandover) | `Formula/prehandover.rb` |
+| agentskills | [`jwa91/agentskills`](https://github.com/jwa91/agentskills) | `Casks/agentskills.rb` |
+| prehandover | [`jwa91/prehandover`](https://github.com/jwa91/prehandover) | `Casks/prehandover.rb` |
 | trnscrb | [`jwa91/trnscrb`](https://github.com/jwa91/trnscrb) | `Casks/trnscrb.rb` |
 
 To add a new item: in its source repo, run `jwa-tobrew init` (auto-detects
@@ -76,7 +78,7 @@ shipped and the conventions sibling repos must follow to ship here.
 
 ```
 Casks/                     Homebrew Casks — auto-committed by sibling repos
-Formula/                   Homebrew Formulae — auto-committed by sibling repos
+Formula/                   (empty as of v0.4.1 — all items now ship as Casks per ADR 0008)
 .agents/skills/            agent skills (gitignored; materialised by `make bootstrap-skills`)
 .claude/skills/            symlinks to .agents/skills/ (gitignored)
 docs/adr/                  architecture decision records

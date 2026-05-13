@@ -17,6 +17,41 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-05-13
+
+This release completes ADR 0008's migration: every Go CLI in the family
+now ships as a **Cask** (modern `homebrew_casks:` shape) with Developer
+ID signing + notarization. The deprecated `brews:` block is no longer
+used anywhere in the family.
+
+### Added
+
+- **`Casks/agentskills.rb`** — auto-committed by `jwa91/agentskills`
+  at v0.1.1 (now codesigned + notarized).
+- **`Casks/prehandover.rb`** — auto-committed by `jwa91/prehandover`
+  at v0.1.1 (now codesigned + notarized).
+
+### Removed
+
+- **`Formula/agentskills.rb`** — replaced by the Cask above.
+- **`Formula/prehandover.rb`** — replaced by the Cask above.
+
+### Changed
+
+- **README "How items get here"** table updated — every row now points
+  at `Casks/` (the Formula column is gone).
+- **README Layout** notes `Formula/` is empty by design as of this
+  release; future items in the family default to Casks.
+- **`tap.toml`** regenerated to reflect the new Cask shapes.
+
+### Known issues
+
+- `jwa-tobrew config` still renders multi-line cask `depends_on` blocks
+  (e.g. `depends_on formula: [\n  "gh",\n]`) as the truncated string
+  `deps = ["formula: ["]` in `tap.toml`. Affects `agentskills` and
+  `jwa-tobrew` entries. Cosmetic — the underlying `.rb` files are
+  correct. Fix queued for the next `jwa-tobrew` release.
+
 ## [0.4.0] — 2026-05-13
 
 This release converts the tap into a **pure distribution channel** (ADR
@@ -255,7 +290,8 @@ their `.rb` files here.
 - **Self-hosting GoReleaser config** at `.goreleaser.yaml` writes
   `Formula/jwa-tobrew.rb` back into this same repo on release.
 
-[Unreleased]: https://github.com/jwa91/homebrew-tap/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/jwa91/homebrew-tap/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/jwa91/homebrew-tap/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jwa91/homebrew-tap/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jwa91/homebrew-tap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jwa91/homebrew-tap/compare/v0.1.0...v0.2.0
