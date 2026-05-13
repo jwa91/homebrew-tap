@@ -1,0 +1,13 @@
+# Architecture Decision Records
+
+Short ADRs (one paragraph each) capturing intentional design choices for this repo. Each entry has a **scope** sentence (what the rule covers) and a **why** sentence (the constraint that produced it). Reference these from PR reviews when someone proposes reverting the decision.
+
+| # | Title |
+|---|-------|
+| [0001](0001-no-secret-handling-in-jwa-tobrew.md) | jwa-tobrew does not fetch or manage secrets |
+| [0002](0002-ssh-only-for-tap-pushes.md) | Tap pushes use SSH, never an HTTPS-with-token flow |
+| [0003](0003-no-hardcoded-secret-references.md) | No hardcoded UUIDs, item names, or secret references in source |
+| [0004](0004-two-parsers-for-github-refs.md) | Two distinct parsers for GitHub references |
+| [0005](0005-no-env-files-only-op-templates.md) | No `.env` files; only `.env.template` with `op://` references |
+
+The cross-project version of these rules lives at `~/dotfiles/docs/security-ground-rules.md`.
