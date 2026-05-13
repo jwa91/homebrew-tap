@@ -17,6 +17,11 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
+### Changed
+
+- **ADR 0005** rewritten to a tap-scoped policy; the universal `.env`
+  / `op://` rule moves upstream to `dotfiles/docs/adr/0001`.
+
 ### Added
 
 - **ADR 0006** (agentskills boundary contract) and **ADR 0007**
