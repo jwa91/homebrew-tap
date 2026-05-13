@@ -19,6 +19,19 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ### Added
 
+- **ADR 0006** (agentskills boundary contract) and **ADR 0007**
+  (dotfiles contract) documenting the one-way file/install flows
+  between this tap and its sibling repos.
+- **Tap-skill migration plan** at
+  `docs/migration-tap-skills-to-agentskills.md` covering pre-migration
+  gates, file moves, planned `align.go` changes, and the SHA-pinning
+  decision for `AGENTSKILLS_REF`.
+- **`align` (tap mode) checks**: ADR 0006 and ADR 0007 must exist;
+  no `Brewfile` at the tap root (ADR 0007 forbidden pattern (c)); no
+  `security-ground-rules.md` duplicated inside the tap (ADR 0007
+  reference-loop rule).
+- **`prek` `jwa-tobrew-align` hook scope** extended to include
+  `docs/migration-` so edits to the migration plan re-run align.
 - **Three new agent skills** at `.agents/skills/` (with `.claude/skills/`
   symlinks):
   - `tap-alignment` — explains the three-layer convention model

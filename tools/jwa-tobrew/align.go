@@ -192,7 +192,80 @@ func alignTap(dir string) []alignFinding {
 			Action: "missing — tap embeds a Go CLI; required to publish it back to the tap",
 		})
 	}
+
+	// ADR 0006 — the boundary contract with agentskills must be on
+	// disk. The tap's bootstrap mechanism (planned migration target)
+	// and the `align` rules below derive from it, so a missing ADR
+	// 0006 means the rules below have no anchor.
+	if !exists(filepath.Join(dir, "docs", "adr", "0006-agentskills-boundary-contract.md")) {
+		f = append(f, alignFinding{
+			Path:   filepath.Join("docs", "adr", "0006-agentskills-boundary-contract.md"),
+			Action: "missing — boundary contract with agentskills must be present (see ADR 0006 in this directory)",
+		})
+	}
+
+	// ADR 0007 — the boundary contract with dotfiles. The
+	// no-Brewfile and no-security-doc-duplication rules below derive
+	// from it.
+	if !exists(filepath.Join(dir, "docs", "adr", "0007-dotfiles-tap-contract.md")) {
+		f = append(f, alignFinding{
+			Path:   filepath.Join("docs", "adr", "0007-dotfiles-tap-contract.md"),
+			Action: "missing — boundary contract with dotfiles must be present (see ADR 0007 in this directory)",
+		})
+	}
+
+	// ADR 0007 forbidden pattern (c): the tap must not have its own
+	// Brewfile. `~/dotfiles/Brewfile` is the single source of truth
+	// for what gets installed on a fresh Mac.
+	if exists(filepath.Join(dir, "Brewfile")) {
+		f = append(f, alignFinding{
+			Path:   "Brewfile",
+			Action: "forbidden — Brewfile belongs in ~/dotfiles only (ADR 0007). Remove this file.",
+		})
+	}
+
+	// ADR 0007 reference-loop rule: the security ground rules live
+	// in ~/dotfiles/docs/security-ground-rules.md only. The tap must
+	// not host a copy under any path.
+	if hits := findSecurityGroundRulesDupes(dir); len(hits) > 0 {
+		for _, hit := range hits {
+			rel, err := filepath.Rel(dir, hit)
+			if err != nil {
+				rel = hit
+			}
+			f = append(f, alignFinding{
+				Path:   rel,
+				Action: "forbidden — security ground rules live in ~/dotfiles/docs/security-ground-rules.md (ADR 0007). Remove this duplicate and link to the canonical doc instead.",
+			})
+		}
+	}
 	return f
+}
+
+// findSecurityGroundRulesDupes walks the tap looking for any file
+// named `security-ground-rules.md`. ADR 0007 forbids duplicating the
+// dotfiles security model inside the tap. We skip VCS internals and
+// any vendored agentskills bootstrap output so this stays cheap and
+// stable across machines.
+func findSecurityGroundRulesDupes(root string) []string {
+	var hits []string
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			base := info.Name()
+			if path != root && (base == ".git" || base == "node_modules" || base == "vendor" || base == ".cache") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if info.Name() == "security-ground-rules.md" {
+			hits = append(hits, path)
+		}
+		return nil
+	})
+	return hits
 }
 
 func alignProject(dir string) []alignFinding {

@@ -65,7 +65,7 @@ id = "jwa-tobrew-align"
 name = "jwa-tobrew align (no drift)"
 entry = '''bash -c 'cd "$(git rev-parse --show-toplevel)" && if [ -x bin/jwa-tobrew ]; then ./bin/jwa-tobrew align; else go run ./tools/jwa-tobrew align; fi' '''
 language = "system"
-files = '^(\.agents/skills/|\.claude/skills/|docs/adr/|Casks/|Formula/|tools/jwa-tobrew/)|^(README|CHANGELOG)\.md$'
+files = '^(\.agents/skills/|\.claude/skills/|docs/adr/|docs/migration-|Casks/|Formula/|tools/jwa-tobrew/)|^(README|CHANGELOG)\.md$'
 pass_filenames = false
 
 # --- Commit message ---------------------------------------------------
