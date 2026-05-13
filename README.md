@@ -20,9 +20,9 @@ and re-run, do not edit the table by hand.
 
 | Name | Kind | Version | Description |
 |------|------|---------|-------------|
-| [agentskills](https://github.com/jwa91/agentskills) | cask | 0.1.1 | Install and manage agent skills inside a project |
-| [jwa-harden](https://github.com/jwa91/jwa-harden) | cask | 0.1.2 | Wrap a command with op run against the nearest .env.template |
-| [jwa-tobrew](https://github.com/jwa91/jwa-tobrew) | cask | 0.4.2 | Release a project to the personal jwa91/tap Homebrew tap |
+| [agentskills](https://github.com/jwa91/agentskills) | cask | 0.1.2 | Install and manage agent skills inside a project |
+| [jwa-harden](https://github.com/jwa91/jwa-harden) | cask | 0.1.3 | Wrap a command with op run against the nearest .env.template |
+| [jwa-tobrew](https://github.com/jwa91/jwa-tobrew) | cask | 0.4.3 | Release a project to the personal jwa91/tap Homebrew tap |
 | [prehandover](https://github.com/jwa91/prehandover) | cask | 0.1.1 | Unified agent-stop validation for repo-owned agent harness contracts |
 | [trnscrb](https://github.com/jwa91/trnscrb) | cask | 0.4.1 | Drop audio, PDFs, and images onto your menu bar to get markdown back |
 
