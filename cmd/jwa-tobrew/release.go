@@ -133,6 +133,14 @@ func releaseBinary(c Config, dir, owner, repo, kind, name, version, asset, desc 
 			return err
 		}
 	} else {
+		body, err := os.ReadFile(full)
+		if err != nil {
+			return err
+		}
+		if n := AssetCount(body); n > 1 {
+			return fmt.Errorf("%s has %d url lines (multi-platform); jwa-tobrew can't safely update it — the source repo's release pipeline owns this formula",
+				art.RelPath(), n)
+		}
 		changed, err := UpdateVersionAndSha(full, ver, sha)
 		if err != nil {
 			return err

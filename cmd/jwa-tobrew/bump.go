@@ -41,6 +41,10 @@ func runBump(args []string) error {
 	if err != nil {
 		return err
 	}
+	if n := AssetCount(body); n > 1 {
+		return fmt.Errorf("%s has %d url lines (multi-platform); jwa-tobrew can't safely bump it — the source repo's release pipeline owns this formula. Run `goreleaser release` in the source repo instead",
+			art.RelPath(), n)
+	}
 
 	owner, repo, err := findRepoRefInBody(string(body))
 	if err != nil {

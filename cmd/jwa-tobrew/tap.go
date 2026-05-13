@@ -62,11 +62,23 @@ func FindArtifact(tap, name string) (*Artifact, error) {
 }
 
 var (
-	versionRE = regexp.MustCompile(`(?m)^(\s*version\s+)"[^"]+"`)
-	sha256RE  = regexp.MustCompile(`(?m)^(\s*sha256\s+)"[^"]+"`)
+	versionRE  = regexp.MustCompile(`(?m)^(\s*version\s+)"[^"]+"`)
+	sha256RE   = regexp.MustCompile(`(?m)^(\s*sha256\s+)"[^"]+"`)
+	urlCountRE = regexp.MustCompile(`(?m)^\s*url\s+"`)
 )
 
-// UpdateVersionAndSha rewrites the first version + sha256 lines in a tap file.
+// AssetCount returns how many `url "..."` lines a tap file contains.
+// Single-asset items (every cask, simple formulas) return 1; multi-platform
+// formulas (typically published directly by a source repo's GoReleaser
+// `brews:` block) return more than one.
+func AssetCount(body []byte) int {
+	return len(urlCountRE.FindAllIndex(body, -1))
+}
+
+// UpdateVersionAndSha rewrites the version + sha256 lines in a tap file.
+// Assumes a single url/sha256 pair — callers must reject multi-platform
+// formulas first (see AssetCount), since their per-platform shas would be
+// silently overwritten with whichever sha the caller computed.
 // Returns true if the file was changed.
 func UpdateVersionAndSha(path, version, sha string) (bool, error) {
 	b, err := os.ReadFile(path)
