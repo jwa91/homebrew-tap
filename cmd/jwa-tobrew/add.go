@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,9 +21,9 @@ func runAdd(args []string) error {
 
 	rest := fs.Args()
 	if len(rest) < 1 {
-		return errors.New("usage: brwtp add <github-url> [flags]")
+		return errors.New("usage: jwa-tobrew add <github-url> [flags]")
 	}
-	owner, repo, err := parseGitHubAddURL(rest[0])
+	owner, repo, err := parseRepoRef(rest[0])
 	if err != nil {
 		return err
 	}
@@ -102,33 +101,6 @@ func runAdd(args []string) error {
 		ok("pushed commit %s — install with `brew install %s/%s/%s`", shortHash(hash), c.TapOwner, c.TapName, *name)
 	}
 	return nil
-}
-
-func parseGitHubAddURL(s string) (string, string, error) {
-	// Accept owner/repo, github.com/owner/repo, https://github.com/owner/repo, git@github.com:owner/repo
-	s = strings.TrimSuffix(s, ".git")
-	if strings.HasPrefix(s, "git@github.com:") {
-		parts := strings.SplitN(strings.TrimPrefix(s, "git@github.com:"), "/", 2)
-		if len(parts) != 2 {
-			return "", "", fmt.Errorf("could not parse %q", s)
-		}
-		return parts[0], parts[1], nil
-	}
-	if u, err := url.Parse(s); err == nil && u.Host != "" {
-		if u.Host != "github.com" {
-			return "", "", fmt.Errorf("only github.com URLs are supported (got %s)", u.Host)
-		}
-		parts := strings.Split(strings.Trim(u.Path, "/"), "/")
-		if len(parts) < 2 {
-			return "", "", fmt.Errorf("could not extract owner/repo from %q", s)
-		}
-		return parts[0], parts[1], nil
-	}
-	parts := strings.Split(strings.Trim(s, "/"), "/")
-	if len(parts) == 2 {
-		return parts[0], parts[1], nil
-	}
-	return "", "", fmt.Errorf("could not parse %q — expected owner/repo or a github.com URL", s)
 }
 
 func pickAsset(rel *GHRelease, override, kind string) string {

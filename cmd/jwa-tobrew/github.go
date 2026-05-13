@@ -13,6 +13,46 @@ import (
 	"strings"
 )
 
+// parseRepoRef accepts any reasonable spelling of a GitHub repo reference and
+// returns owner, repo. Tolerates trailing path segments (e.g. /tree/main),
+// trailing slashes, and a `.git` suffix.
+//
+// Recognised forms:
+//   owner/repo
+//   github.com/owner/repo
+//   http(s)://github.com/owner/repo[.git][/...]
+//   git@github.com:owner/repo[.git]
+//   ssh://git@github.com/owner/repo[.git]
+func parseRepoRef(s string) (owner, repo string, err error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", "", errors.New("empty repo reference")
+	}
+	// Peel off scheme/host prefixes in priority order.
+	for _, p := range []string{
+		"git@github.com:",
+		"ssh://git@github.com/",
+		"https://github.com/",
+		"http://github.com/",
+		"github.com/",
+	} {
+		if rest, ok := strings.CutPrefix(s, p); ok {
+			s = rest
+			break
+		}
+	}
+	// Reject other hosts loudly so a typo doesn't silently succeed.
+	if strings.Contains(s, "://") || strings.Contains(s, "@") {
+		return "", "", fmt.Errorf("only github.com refs are supported (got %q)", s)
+	}
+	s = strings.TrimSuffix(s, "/")
+	parts := strings.Split(s, "/")
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("expected owner/repo, got %q", s)
+	}
+	return parts[0], strings.TrimSuffix(parts[1], ".git"), nil
+}
+
 // GHRelease is the subset of GitHub release fields we use.
 type GHRelease struct {
 	TagName string `json:"tag_name"`

@@ -42,7 +42,7 @@ func runBump(args []string) error {
 		return err
 	}
 
-	owner, repo, err := parseGitHubURL(string(body))
+	owner, repo, err := findRepoRefInBody(string(body))
 	if err != nil {
 		return err
 	}
@@ -113,17 +113,6 @@ func runBump(args []string) error {
 		ok("pushed commit %s", shortHash(hash))
 	}
 	return nil
-}
-
-// parseGitHubURL extracts owner/repo from the first github.com URL in body.
-func parseGitHubURL(body string) (string, string, error) {
-	re := regexp.MustCompile(`github\.com/([^/\s"]+)/([^/\s"]+)`)
-	m := re.FindStringSubmatch(body)
-	if m == nil {
-		return "", "", errors.New("no github.com URL found in tap file")
-	}
-	owner, repo := m[1], strings.TrimSuffix(m[2], ".git")
-	return owner, repo, nil
 }
 
 // substituteVersion replaces #{version} interpolations in the existing url

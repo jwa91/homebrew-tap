@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -97,7 +98,7 @@ func parseTapFile(path, kind string) (Item, error) {
 	if m := homepageLineRE.FindStringSubmatch(string(body)); m != nil {
 		it.Homepage = m[1]
 	}
-	if owner, repo, err := parseGitHubURL(string(body)); err == nil {
+	if owner, repo, err := findRepoRefInBody(string(body)); err == nil {
 		it.Source = "github.com/" + owner + "/" + repo
 	}
 	for _, m := range dependsOnRE.FindAllStringSubmatch(string(body), -1) {
@@ -109,6 +110,19 @@ func parseTapFile(path, kind string) (Item, error) {
 		it.Deps = append(it.Deps, m[1])
 	}
 	return it, nil
+}
+
+// findRepoRefInBody returns the first GitHub owner/repo it finds in body.
+// Used when scanning a Cask/Formula `.rb` for its source repo. For parsing
+// a single string (CLI input, git remote URL), use parseRepoRef instead.
+var bodyRepoRefRE = regexp.MustCompile(`github\.com/([^/\s"]+)/([^/\s"]+)`)
+
+func findRepoRefInBody(body string) (owner, repo string, err error) {
+	m := bodyRepoRefRE.FindStringSubmatch(body)
+	if m == nil {
+		return "", "", errors.New("no github.com URL found in tap file")
+	}
+	return m[1], strings.TrimSuffix(m[2], ".git"), nil
 }
 
 // tidyDep collapses whitespace in a depends_on argument list and trims

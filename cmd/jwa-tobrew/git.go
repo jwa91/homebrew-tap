@@ -22,24 +22,7 @@ func repoOriginInfo(dir string) (string, string, error) {
 	if err != nil {
 		return "", "", errors.New("no `origin` remote configured")
 	}
-	url := strings.TrimSpace(string(out))
-	url = strings.TrimSuffix(url, ".git")
-	switch {
-	case strings.HasPrefix(url, "git@github.com:"):
-		parts := strings.SplitN(strings.TrimPrefix(url, "git@github.com:"), "/", 2)
-		if len(parts) != 2 {
-			return "", "", fmt.Errorf("could not parse origin URL %q", url)
-		}
-		return parts[0], parts[1], nil
-	case strings.HasPrefix(url, "https://github.com/"):
-		parts := strings.SplitN(strings.TrimPrefix(url, "https://github.com/"), "/", 2)
-		if len(parts) != 2 {
-			return "", "", fmt.Errorf("could not parse origin URL %q", url)
-		}
-		return parts[0], parts[1], nil
-	default:
-		return "", "", fmt.Errorf("origin %q is not a github.com URL", url)
-	}
+	return parseRepoRef(strings.TrimSpace(string(out)))
 }
 
 func gitDirty(dir string) (bool, error) {
