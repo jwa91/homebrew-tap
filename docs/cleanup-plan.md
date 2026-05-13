@@ -1,5 +1,9 @@
 # Cleanup plan — open ends after agentskills v0.1.0
 
+> Historical note: this snapshot predates the v0.4.1 Cask migration. Current
+> family distribution uses `Casks/*.rb` via GoReleaser `homebrew_casks`; see
+> ADR 0008 and ADR 0009 for the active contract.
+
 Snapshot from 2026-05-13. After shipping `agentskills` v0.1.0 (commit
 `beb2952` on `jwa91/agentskills`), publishing `Formula/agentskills.rb` here
 (commit `4bf01d3`), executing the tap-skill migration (commits `f65616c` +

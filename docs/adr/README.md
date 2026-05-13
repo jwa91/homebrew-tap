@@ -12,5 +12,6 @@ Short ADRs (one paragraph each) capturing intentional design choices for this re
 | [0006](0006-agentskills-boundary-contract.md) | Boundary contract between `homebrew-tap` and `agentskills` |
 | [0007](0007-dotfiles-tap-contract.md) | Boundary contract between `homebrew-tap` and `dotfiles` |
 | [0008](0008-one-binary-per-repo-and-homebrew-casks.md) | One binary per repo; ship via `homebrew_casks` |
+| [0009](0009-cli-family-import-contract.md) | CLI family import contract |
 
 The cross-project version of these rules lives at `~/dotfiles/docs/security-ground-rules.md`.

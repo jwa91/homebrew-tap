@@ -1,5 +1,9 @@
 # Migration plan — move tap-related skills into `agentskills`
 
+> Historical note: this plan was written during the Formula-to-Cask transition.
+> The current contract is ADR 0006 + ADR 0009, and `agentskills` now publishes
+> `Casks/agentskills.rb` via GoReleaser `homebrew_casks`.
+
 This plan moves the four tap-related skills currently vendored under
 `/Users/jw/developer/homebrew-tap/.agents/skills/` into the `agentskills`
 monorepo at `/Users/jw/developer/ai-monorepo/agentskills/skills/`, and converts

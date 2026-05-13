@@ -40,33 +40,13 @@ Project-scoped tasks. Cross-repo work lives in `~/dotfiles/TODO.md`.
          (c) is simplest; (a) is closest to "real brew test"; (b) is most
          flexible. Decide before building.
 
-- [ ] **Skills alignment + relocate to `.agents/skills/`**
-      Two-part: adopt the canonical layout, then rewrite the content.
-      - **Convention (this repo, scope-limited for now):** skills live in
-        `.agents/skills/<name>/` as the source of truth. `.claude/skills/<name>`
-        is a symlink to `../../.agents/skills/<name>` (same shape as
-        prehandover). This lets other agent runtimes (codex, cursor, etc.)
-        symlink the same source from their own dirs without duplication.
-        Skills live in the repo they describe — no central skills repo for
-        now.
-      - **Migrate** the existing `.claude/skills/jwa-tobrew/` (real dir) to
-        `.agents/skills/jwa-tobrew/`, then replace `.claude/skills/jwa-tobrew`
-        with a symlink. Per "no backwards-compat": just move it, don't keep
-        a stub at the old path.
-      - **Update `jwa-tobrew init`** to scaffold the project-level release
-        skill at `.agents/skills/release/SKILL.md` and write the
-        `.claude/skills/release` symlink. The embedded
-        `cmd/jwa-tobrew/templates/skill-release.md.tmpl` stays; only the
-        write paths in `init.go::writeAuxiliary` change. Also create
-        `.agents/` if missing.
-      - **Content rewrite** (independent of layout): the skill at
-        `.claude/skills/jwa-tobrew/SKILL.md` and the embedded template have
-        drifted from the actual command set. Decide whether to keep the
-        in-repo skill as one big "tap operations" skill or split it into
-        focused per-command skills (`tap-add`, `tap-bump`, `tap-release`,
-        `tap-deps`). Either way: rewrite to match the current commands,
-        cross-reference the security ground rules, and verify both skills
-        describe the same model (no contradictions).
+- [ ] **Skills alignment follow-up**
+      The active contract is ADR 0006 + ADR 0009: `agentskills` owns skill
+      content and harness links, and `jwa-tobrew init` calls
+      `agentskills bootstrap --skill release` instead of embedding a release
+      skill template. Remaining work is to remove any obsolete generated skill
+      output from local checkouts and keep tap docs pointed at the canonical
+      skills in `jwa91/agentskills`.
 
 - [ ] **Schema + strict typing, no defensive defaults**
       Inspired by prehandover's `schema.json` + `.golangci.yml`. The point is

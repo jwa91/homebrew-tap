@@ -17,6 +17,20 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
+### Added
+
+- **ADR 0009** — CLI family import contract. Defines the acyclic
+  bootstrap order and process-boundary-only relationships between
+  `jwa-harden`, `agentskills`, `prehandover`, and `jwa-tobrew`.
+
+### Changed
+
+- **ADR 0006 / 0007** refreshed to match the current Cask-based
+  distribution model and dotfiles Brewfile entries.
+- **Release skill ownership clarified**: project release skills are installed
+  from `agentskills`, while `jwa-tobrew init` owns only release config
+  scaffolding and process-level calls to `agentskills`.
+
 ## [0.4.1] — 2026-05-13
 
 This release completes ADR 0008's migration: every Go CLI in the family

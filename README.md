@@ -53,8 +53,8 @@ notarization:
 | trnscrb | [`jwa91/trnscrb`](https://github.com/jwa91/trnscrb) | `Casks/trnscrb.rb` |
 
 To add a new item: in its source repo, run `jwa-tobrew init` (auto-detects
-Go / Cask / Formula) to scaffold the goreleaser config that publishes back
-here. To snapshot somebody else's release into the tap: `jwa-tobrew add
+Go / Cask / Formula) to scaffold the repo-local release config that publishes
+back here. To snapshot somebody else's release into the tap: `jwa-tobrew add
 github.com/SOMEONE/some-cli` — that command writes the `.rb` directly. See
 the [`jwa-tobrew` README](https://github.com/jwa91/jwa-tobrew) for the
 full command surface.
