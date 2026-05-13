@@ -8,7 +8,7 @@
 # would re-create the dual-source-of-truth drift ADR 0006 exists to
 # prevent. Per-skill tags (`<skill>/vX.Y.Z`) cannot compose into a
 # single `--ref` call (agentskills bootstrap takes one ref).
-AGENTSKILLS_REF ?= beb2952275c0b1dfa05d75093b3d6e7fb960f706
+AGENTSKILLS_REF ?= b4976abc7dba164299fb6e869d15615a3d987cae
 
 # Populate .agents/skills/ from the agentskills repo. Idempotent — safe
 # to re-run on a fresh clone or after pulling. .agents/skills/ and
