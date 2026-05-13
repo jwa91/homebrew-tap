@@ -17,6 +17,28 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ## [Unreleased]
 
+### Added
+
+- **`prek.toml`** — pre-commit hook config in prek's native TOML format
+  (works with `pre-commit` too via `.pre-commit-config.yaml`-equivalent
+  semantics). Enforces locally: gofmt + vet + build, gitleaks secret
+  scan, forbid raw `.env*` files (only `.env.template` allowed),
+  `jwa-tobrew align` must report no drift, conventional-commit subject
+  on the commit-msg stage, plus standard whitespace/syntax/large-file
+  guards. Install with `make hooks`.
+- **`.github/CODEOWNERS`** — template that auto-requests review from
+  the owner on every PR. Becomes enforcing once branch protection's
+  "Require review from Code Owners" is enabled.
+- **`make hooks`** target installs prek's git shims.
+
+### Fixed
+
+- **`renderTapTOML` / `renderTapLocalTOML`** end on a single newline
+  instead of two, so generators are idempotent under
+  end-of-file-fixer (no churn loop with prek).
+- **gofmt drift in `ui.go` and `github.go`** — caught by the new
+  pre-commit hook on its first run.
+
 ## [0.2.0] — 2026-05-13
 
 ### Changed

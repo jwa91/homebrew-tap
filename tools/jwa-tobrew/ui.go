@@ -30,11 +30,21 @@ func paint(c, s string) string {
 	return c + s + cReset
 }
 
-func info(format string, a ...any)  { fmt.Fprintln(os.Stderr, paint(cBlue, "→"), fmt.Sprintf(format, a...)) }
-func ok(format string, a ...any)    { fmt.Fprintln(os.Stderr, paint(cGreen, "✓"), fmt.Sprintf(format, a...)) }
-func warn(format string, a ...any)  { fmt.Fprintln(os.Stderr, paint(cYellow, "!"), fmt.Sprintf(format, a...)) }
-func fail(format string, a ...any)  { fmt.Fprintln(os.Stderr, paint(cRed, "✗"), fmt.Sprintf(format, a...)) }
-func hint(format string, a ...any)  { fmt.Fprintln(os.Stderr, paint(cGray, "  "+fmt.Sprintf(format, a...))) }
+func info(format string, a ...any) {
+	fmt.Fprintln(os.Stderr, paint(cBlue, "→"), fmt.Sprintf(format, a...))
+}
+func ok(format string, a ...any) {
+	fmt.Fprintln(os.Stderr, paint(cGreen, "✓"), fmt.Sprintf(format, a...))
+}
+func warn(format string, a ...any) {
+	fmt.Fprintln(os.Stderr, paint(cYellow, "!"), fmt.Sprintf(format, a...))
+}
+func fail(format string, a ...any) {
+	fmt.Fprintln(os.Stderr, paint(cRed, "✗"), fmt.Sprintf(format, a...))
+}
+func hint(format string, a ...any) {
+	fmt.Fprintln(os.Stderr, paint(cGray, "  "+fmt.Sprintf(format, a...)))
+}
 func banner(format string, a ...any) {
 	fmt.Fprintln(os.Stderr, paint(cBold, fmt.Sprintf(format, a...)))
 }

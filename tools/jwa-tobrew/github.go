@@ -18,11 +18,12 @@ import (
 // trailing slashes, and a `.git` suffix.
 //
 // Recognised forms:
-//   owner/repo
-//   github.com/owner/repo
-//   http(s)://github.com/owner/repo[.git][/...]
-//   git@github.com:owner/repo[.git]
-//   ssh://git@github.com/owner/repo[.git]
+//
+//	owner/repo
+//	github.com/owner/repo
+//	http(s)://github.com/owner/repo[.git][/...]
+//	git@github.com:owner/repo[.git]
+//	ssh://git@github.com/owner/repo[.git]
 func parseRepoRef(s string) (owner, repo string, err error) {
 	s = strings.TrimSpace(s)
 	if s == "" {

@@ -1,4 +1,4 @@
-.PHONY: build install dev bootstrap clean
+.PHONY: build install dev bootstrap clean hooks
 
 BIN_DIR ?= $(HOME)/.local/bin
 
@@ -28,3 +28,11 @@ bootstrap: build
 
 clean:
 	rm -rf bin dist
+
+# Install prek git hooks. One-time per clone. Hooks run on every commit
+# thereafter; bypass with `git commit --no-verify` (do not, except for
+# WIP branches you'll force-clean before pushing).
+hooks:
+	@which prek >/dev/null 2>&1 || (echo "install prek: brew install prek" && exit 1)
+	prek install
+	@echo "prek hooks installed. Run \`prek run --all-files\` to dry-run them."

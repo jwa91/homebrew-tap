@@ -271,7 +271,7 @@ func renderTapTOML(c Config, items []Item) string {
 		}
 		b.WriteString("\n")
 	}
-	return b.String()
+	return strings.TrimRight(b.String(), "\n") + "\n"
 }
 
 func quoteList(ss []string) string {
@@ -303,5 +303,5 @@ func renderTapLocalTOML(items []Item, annots []LocalAnnotation) string {
 		}
 		b.WriteString("\n")
 	}
-	return b.String()
+	return strings.TrimRight(b.String(), "\n") + "\n"
 }
