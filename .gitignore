@@ -16,6 +16,7 @@
 # Build artifacts
 /bin/
 /dist/
+/jwa-tobrew
 
 # Machine-specific manifest annotations
 tap.local.toml

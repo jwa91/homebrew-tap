@@ -14,6 +14,7 @@ Usage:
 
 Commands:
   add <github-url>    Snapshot a published GitHub release into the tap (no token needed)
+  align               Report (or apply) drift from current jwa-tobrew conventions
   bump <name> [ver]   Re-sync an existing Cask or Formula to a published GitHub release
   config              Regenerate tap.toml + tap.local.toml from current tap state
   deps                Show dependency overview for every item in the tap
@@ -42,6 +43,8 @@ func main() {
 	switch cmd {
 	case "add":
 		err = runAdd(args)
+	case "align":
+		err = runAlign(args)
 	case "bump":
 		err = runBump(args)
 	case "config":

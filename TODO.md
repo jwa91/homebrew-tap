@@ -19,8 +19,7 @@ Project-scoped tasks. Cross-repo work lives in `~/dotfiles/TODO.md`.
           (c) fails the PR if either check fails.
       - A CI job that fails if any tracked file matches `.env*` (other than
         `.env.template`).
-      - Document the threat model in `SECURITY.md`: who can push, what's
-        allowed in a commit, how a compromise is detected.
+      - (`SECURITY.md` itself moved to its own item below.)
 
 - [ ] **Stricter convention enforcement + `jwa-tobrew test`**
       Two strands:
@@ -41,15 +40,85 @@ Project-scoped tasks. Cross-repo work lives in `~/dotfiles/TODO.md`.
          (c) is simplest; (a) is closest to "real brew test"; (b) is most
          flexible. Decide before building.
 
-- [ ] **Skills alignment** — the in-repo skill at
-      `.claude/skills/jwa-tobrew/SKILL.md` and the embedded release-skill
-      template at `cmd/jwa-tobrew/templates/skill-release.md.tmpl` have
-      drifted from the actual command set. Decide whether to keep the
-      in-repo skill as one big "tap operations" skill or split it into
-      focused per-command skills (`tap-add`, `tap-bump`, `tap-release`,
-      `tap-deps`). Either way: rewrite to match the current commands,
-      cross-reference the security ground rules, and verify both skills
-      describe the same model (no contradictions).
+- [ ] **Skills alignment + relocate to `.agents/skills/`**
+      Two-part: adopt the canonical layout, then rewrite the content.
+      - **Convention (this repo, scope-limited for now):** skills live in
+        `.agents/skills/<name>/` as the source of truth. `.claude/skills/<name>`
+        is a symlink to `../../.agents/skills/<name>` (same shape as
+        prehandover). This lets other agent runtimes (codex, cursor, etc.)
+        symlink the same source from their own dirs without duplication.
+        Skills live in the repo they describe — no central skills repo for
+        now.
+      - **Migrate** the existing `.claude/skills/jwa-tobrew/` (real dir) to
+        `.agents/skills/jwa-tobrew/`, then replace `.claude/skills/jwa-tobrew`
+        with a symlink. Per "no backwards-compat": just move it, don't keep
+        a stub at the old path.
+      - **Update `jwa-tobrew init`** to scaffold the project-level release
+        skill at `.agents/skills/release/SKILL.md` and write the
+        `.claude/skills/release` symlink. The embedded
+        `cmd/jwa-tobrew/templates/skill-release.md.tmpl` stays; only the
+        write paths in `init.go::writeAuxiliary` change. Also create
+        `.agents/` if missing.
+      - **Content rewrite** (independent of layout): the skill at
+        `.claude/skills/jwa-tobrew/SKILL.md` and the embedded template have
+        drifted from the actual command set. Decide whether to keep the
+        in-repo skill as one big "tap operations" skill or split it into
+        focused per-command skills (`tap-add`, `tap-bump`, `tap-release`,
+        `tap-deps`). Either way: rewrite to match the current commands,
+        cross-reference the security ground rules, and verify both skills
+        describe the same model (no contradictions).
+
+- [ ] **Schema + strict typing, no defensive defaults**
+      Inspired by prehandover's `schema.json` + `.golangci.yml`. The point is
+      to make wrong state a compile-time or load-time error, not a silently
+      degraded run. No backwards-compat shims — change the types, fix the
+      callers, ship it.
+      - Ship `schema.json` for `tap.toml` (JSON Schema 2020-12, mirroring
+        prehandover's pattern). Add a CI job that validates the committed
+        `tap.toml` against it, and reject unknown fields
+        (`additionalProperties: false`).
+      - Replace the `map[string]string` template payloads in `init.go` and
+        `release.go::writeNewTapFile` with typed structs. `text/template`
+        will then error on missing field references at parse time instead
+        of rendering an empty string.
+      - Audit `parseTapFile` and `LoadConfig` for "if missing, use empty"
+        patterns. Required fields (e.g. `version`, `url`, `desc`,
+        `homepage`) should fail loud, not produce an `Item{}` with empty
+        strings that propagate into `tap.toml`. Pair with the doctor work
+        in item #2 — same set of required fields, single source of truth.
+      - Stop swallowing errors with `warn(...); continue` in
+        `manifest.go::ScanTap`. A malformed `.rb` is a bug, not a warning;
+        the run should fail and the offending file should be named.
+      - Adopt prehandover's `.golangci.yml` (govet, staticcheck, errorlint,
+        nilerr, ineffassign, copyloopvar, durationcheck, bodyclose,
+        misspell). Gate CI on it. Fix every finding rather than nolinting.
+      - If any of the above forces a CLI flag or struct field to change
+        shape, just change it. No deprecation aliases. Update the in-repo
+        skill and ADRs in the same commit.
+
+- [ ] **`SECURITY.md` + repository hardening doc**
+      Split out from item #1 because it's docs work, not CI/branch-policy
+      work, and the doc is the spec the CI in #1 enforces against. Mirrors
+      prehandover's `docs/repository-hardening.md` shape.
+      - Write `SECURITY.md` at repo root: threat model (who can push, what
+        a commit is allowed to contain, how compromise is detected),
+        supported versions (only latest tag of each item), private
+        disclosure channel, scope (this tap repo + each `cmd/` CLI inside
+        it).
+      - Write `docs/repository-hardening.md` enumerating the exact GitHub
+        settings to enable (branch protection, required checks, signed
+        commits, force-push block, default workflow token = read-only,
+        first-time-contributor approval). This is the human-readable
+        version of what item #1's CI/CODEOWNERS work enforces.
+      - Add a `scripts/audit-hardening.sh` (or `jwa-tobrew doctor
+        --remote`) that calls `gh api repos/jwa91/homebrew-tap` and
+        reports drift between the documented expected settings and
+        actual GitHub state. Read-only — no auto-apply.
+      - Cross-link `SECURITY.md` ⇄ `docs/repository-hardening.md` ⇄
+        `~/dotfiles/docs/security-ground-rules.md` ⇄ ADRs 0001/0002/0003.
+      - Per "no backwards-compat": when this doc says HTTPS pushes are
+        forbidden, the corresponding code path stays gone — do not add
+        an opt-in flag to re-enable it.
 
 ---
 
