@@ -109,7 +109,11 @@ func runBump(args []string) error {
 	}
 	ok("updated %s to %s", art.RelPath(), wantVersion)
 
-	hash, err := GitCommitAndPush(c, tap, []string{art.RelPath()}, fmt.Sprintf("Update %s to %s", name, wantVersion))
+	if err := writeManifests(c, tap); err != nil {
+		warn("could not refresh manifests/README: %v", err)
+	}
+
+	hash, err := GitCommitAndPush(c, tap, []string{art.RelPath(), "tap.toml", "README.md"}, fmt.Sprintf("Update %s to %s", name, wantVersion))
 	if err != nil {
 		return err
 	}

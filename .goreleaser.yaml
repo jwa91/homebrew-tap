@@ -8,7 +8,7 @@ before:
 
 builds:
   - id: jwa-tobrew
-    main: ./cmd/jwa-tobrew
+    main: ./tools/jwa-tobrew
     binary: jwa-tobrew
     env:
       - CGO_ENABLED=0

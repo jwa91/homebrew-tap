@@ -3,7 +3,7 @@
 BIN_DIR ?= $(HOME)/.local/bin
 
 build:
-	go build -o bin/jwa-tobrew ./cmd/jwa-tobrew
+	go build -o bin/jwa-tobrew ./tools/jwa-tobrew
 
 install: build
 	install -d $(BIN_DIR)

@@ -163,6 +163,25 @@ func alignTap(dir string) []alignFinding {
 			Action: "missing — create ADR directory and document intentional design choices",
 		})
 	}
+
+	readme := filepath.Join(dir, "README.md")
+	if exists(readme) {
+		body, _ := os.ReadFile(readme)
+		s := string(body)
+		if !strings.Contains(s, readmeBeginMarker) || !strings.Contains(s, readmeEndMarker) {
+			f = append(f, alignFinding{
+				Path:   "README.md",
+				Action: fmt.Sprintf("missing %q … %q markers — wrap the items section to enable auto-update", readmeBeginMarker, readmeEndMarker),
+			})
+		}
+	}
+
+	if !exists(filepath.Join(dir, "CHANGELOG.md")) {
+		f = append(f, alignFinding{
+			Path:   "CHANGELOG.md",
+			Action: "missing — create a Keep-a-Changelog file to version this tap's evolution",
+		})
+	}
 	return f
 }
 
@@ -190,19 +209,17 @@ func alignProject(dir string) []alignFinding {
 
 	f = append(f, skillSymlinkFindings(dir, "release")...)
 
-	if exists(filepath.Join(dir, "go.mod")) {
-		if !exists(filepath.Join(dir, ".goreleaser.yaml")) {
-			f = append(f, alignFinding{
-				Path:   ".goreleaser.yaml",
-				Action: "missing — run `jwa-tobrew init --kind=go` to scaffold",
-			})
-		}
-		if !exists(filepath.Join(dir, "scripts", "release.sh")) {
-			f = append(f, alignFinding{
-				Path:   "scripts/release.sh",
-				Action: "missing — run `jwa-tobrew init --kind=go` to scaffold",
-			})
-		}
+	if !exists(filepath.Join(dir, "scripts", "release.sh")) {
+		f = append(f, alignFinding{
+			Path:   "scripts/release.sh",
+			Action: "missing — run `jwa-tobrew init` to scaffold (cask/formula/go variants)",
+		})
+	}
+	if exists(filepath.Join(dir, "go.mod")) && !exists(filepath.Join(dir, ".goreleaser.yaml")) {
+		f = append(f, alignFinding{
+			Path:   ".goreleaser.yaml",
+			Action: "missing — run `jwa-tobrew init --kind=go` to scaffold",
+		})
 	}
 	return f
 }

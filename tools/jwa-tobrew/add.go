@@ -88,12 +88,11 @@ func runAdd(args []string) error {
 	}
 	ok("wrote %s", art.RelPath())
 
-	// Regenerate the tap manifest before committing so both files travel together.
 	if err := writeManifests(c, tap); err != nil {
-		warn("could not refresh tap.toml: %v", err)
+		warn("could not refresh manifests/README: %v", err)
 	}
 
-	hash, err := GitCommitAndPush(c, tap, []string{art.RelPath(), "tap.toml"}, fmt.Sprintf("Add %s %s", *name, *version))
+	hash, err := GitCommitAndPush(c, tap, []string{art.RelPath(), "tap.toml", "README.md"}, fmt.Sprintf("Add %s %s", *name, *version))
 	if err != nil {
 		return err
 	}

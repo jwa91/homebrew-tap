@@ -150,7 +150,10 @@ func releaseBinary(c Config, dir, owner, repo, kind, name, version, asset, desc 
 			return nil
 		}
 	}
-	hash, err := GitCommitAndPush(c, tap, []string{art.RelPath()}, fmt.Sprintf("Update %s to %s", name, ver))
+	if err := writeManifests(c, tap); err != nil {
+		warn("could not refresh manifests/README: %v", err)
+	}
+	hash, err := GitCommitAndPush(c, tap, []string{art.RelPath(), "tap.toml", "README.md"}, fmt.Sprintf("Update %s to %s", name, ver))
 	if err != nil {
 		return err
 	}

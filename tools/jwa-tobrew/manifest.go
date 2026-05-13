@@ -177,7 +177,10 @@ func devRoots() []string {
 	}
 }
 
-// writeManifests regenerates tap.toml + tap.local.toml under tap/.
+// writeManifests regenerates tap.toml, tap.local.toml, and the README's
+// items section under tap/. Missing README markers are an error rather
+// than a silent skip — the README is the user-facing surface and drift
+// would go unnoticed.
 func writeManifests(c Config, tap string) error {
 	items, err := ScanTap(tap)
 	if err != nil {
@@ -190,7 +193,58 @@ func writeManifests(c Config, tap string) error {
 	if err := os.WriteFile(filepath.Join(tap, "tap.local.toml"), []byte(renderTapLocalTOML(items, annots)), 0o644); err != nil {
 		return err
 	}
-	return nil
+	return updateReadme(filepath.Join(tap, "README.md"), c, items)
+}
+
+const (
+	readmeBeginMarker = "<!-- BEGIN ITEMS -->"
+	readmeEndMarker   = "<!-- END ITEMS -->"
+)
+
+func updateReadme(path string, c Config, items []Item) error {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	s := string(body)
+	bi := strings.Index(s, readmeBeginMarker)
+	ei := strings.Index(s, readmeEndMarker)
+	if bi < 0 || ei < 0 || ei < bi {
+		return fmt.Errorf("%s missing %q … %q markers — wrap the items section to enable auto-update", path, readmeBeginMarker, readmeEndMarker)
+	}
+	rendered := readmeBeginMarker + "\n" + renderReadmeItems(c, items) + readmeEndMarker
+	updated := s[:bi] + rendered + s[ei+len(readmeEndMarker):]
+	if updated == s {
+		return nil
+	}
+	return os.WriteFile(path, []byte(updated), 0o644)
+}
+
+func renderReadmeItems(c Config, items []Item) string {
+	var b strings.Builder
+	b.WriteString("\n| Name | Kind | Version | Description |\n")
+	b.WriteString("|------|------|---------|-------------|\n")
+	for _, it := range items {
+		name := it.Name
+		if it.Source != "" {
+			name = fmt.Sprintf("[%s](https://%s)", it.Name, it.Source)
+		}
+		desc := it.Desc
+		if desc == "" {
+			desc = "—"
+		}
+		fmt.Fprintf(&b, "| %s | %s | %s | %s |\n", name, it.Kind, it.Version, desc)
+	}
+	b.WriteString("\n```bash\n")
+	for _, it := range items {
+		if it.Kind == "cask" {
+			fmt.Fprintf(&b, "brew install --cask %s/%s/%s\n", c.TapOwner, c.TapName, it.Name)
+		} else {
+			fmt.Fprintf(&b, "brew install %s/%s/%s\n", c.TapOwner, c.TapName, it.Name)
+		}
+	}
+	b.WriteString("```\n\n")
+	return b.String()
 }
 
 func renderTapTOML(c Config, items []Item) string {
