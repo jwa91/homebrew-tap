@@ -19,6 +19,9 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ### Changed
 
+- **Tag scheme for the agentskills CLI** is plain `v*` (was `cli/v*`);
+  per-skill release tags remain `<skill>/v*`. ADR 0006 and the
+  migration plan updated accordingly.
 - **ADR 0005** rewritten to a tap-scoped policy; the universal `.env`
   / `op://` rule moves upstream to `dotfiles/docs/adr/0001`.
 

@@ -25,9 +25,9 @@ Every box must be ticked before step 1 (file moves) runs. If any fails, stop
 and fix it before continuing — partial migration leaves the tap unable to
 bootstrap its own align skill.
 
-- [ ] **`cli/vX.Y.Z` tag exists on `jwa91/agentskills`.** `gh release view cli/vX.Y.Z --repo jwa91/agentskills` returns a release with goreleaser-built darwin+linux × amd64+arm64 archives and a `checksums.txt`. Tag scheme is `cli/`-prefixed so per-skill tags (`jwa-tobrew/vX.Y.Z`, …) don't collide (briefing §Distribution).
-- [ ] **`Formula/agentskills.rb` is present in this tap on `main`** and was written by `agentskills`' goreleaser `brews:` block (not by hand). Filename matches the binary name (`agentskills`). Source = `https://github.com/jwa91/agentskills` at the `cli/vX.Y.Z` tag. Multi-platform (4 `url` lines) so `jwa-tobrew bump`/`release` correctly refuse it as source-repo-managed (per `jwa-tobrew` SKILL.md §Two release patterns).
-- [ ] **`brew install jwa91/tap/agentskills` works on a clean machine.** Verified in either (a) a fresh macOS VM, (b) a Linuxbrew container, or (c) a clean shell with `HOMEBREW_NO_INSTALL_FROM_API=1`, `brew untap jwa91/tap || true`, `brew uninstall agentskills || true`, then `brew tap jwa91/tap && brew install agentskills`. `agentskills --version` returns the expected `cli/vX.Y.Z`.
+- [ ] **`vX.Y.Z` tag exists on `jwa91/agentskills`.** `gh release view vX.Y.Z --repo jwa91/agentskills` returns a release with goreleaser-built darwin+linux × amd64+arm64 archives and a `checksums.txt`. Tag scheme is plain `v*` for the binary; per-skill tags (`<skill>/vX.Y.Z`) are filtered by goreleaser's `git.ignore_tags`.
+- [ ] **`Formula/agentskills.rb` is present in this tap on `main`** and was written by `agentskills`' goreleaser `brews:` block (not by hand). Filename matches the binary name (`agentskills`). Source = `https://github.com/jwa91/agentskills` at the `vX.Y.Z` tag. Multi-platform (4 `url` lines) so `jwa-tobrew bump`/`release` correctly refuse it as source-repo-managed (per `jwa-tobrew` SKILL.md §Two release patterns).
+- [ ] **`brew install jwa91/tap/agentskills` works on a clean machine.** Verified in either (a) a fresh macOS VM, (b) a Linuxbrew container, or (c) a clean shell with `HOMEBREW_NO_INSTALL_FROM_API=1`, `brew untap jwa91/tap || true`, `brew uninstall agentskills || true`, then `brew tap jwa91/tap && brew install agentskills`. `agentskills --version` returns the expected `vX.Y.Z`.
 - [ ] **`agentskills doctor` is green** on the same machine: git on PATH, cache dir writable at `~/.cache/agentskills/repos/`, repo `https://github.com/jwa91/agentskills.git` reachable, default ref `main` resolvable.
 - [ ] **`agentskills bootstrap --skill jwa-tobrew` succeeds against the agentskills repo HEAD** (post-step-7 of the briefing migration order). Run it in a scratch dir: `mkdir /tmp/asbt && cd /tmp/asbt && agentskills bootstrap --skill jwa-tobrew`. Result: `/tmp/asbt/.agents/skills/jwa-tobrew/SKILL.md` exists with frontmatter `name: jwa-tobrew`. Repeat for `scaffold-cli`, `tap-alignment`, `tap-scaffolding`.
 - [ ] **All four skills exist under `agentskills/skills/<name>/`** in the agentskills repo at the ref the tap will pin (`main`, or an explicit `--ref` we choose to set in the bootstrap target). Verified with `agentskills list` against that ref.
@@ -254,7 +254,7 @@ dev bootstrap clean hooks` — extend it):
 # (`AGENTSKILLS_REF=main make bootstrap-skills`) for local development,
 # but the committed default must never be `main` — that would re-create
 # the dual-source-of-truth drift ADR 0006 exists to prevent.
-# AGENTSKILLS_REF ?= <SHA — set after cli/v0.1.0>
+# AGENTSKILLS_REF ?= <SHA — set after v0.1.0>
 
 # Populate .agents/skills/ from the agentskills repo. Idempotent — safe to
 # re-run on a fresh clone or after pulling. .agents/skills/ and
@@ -385,7 +385,7 @@ vendored content:
   committed form must not default to `main`, because an upstream push
   would otherwise silently change what `make bootstrap-skills`
   materialises on a fresh tap clone. The actual SHA gets set after
-  `cli/v0.1.0` lands and the four skills exist on `agentskills` `main`.
+  `v0.1.0` lands and the four skills exist on `agentskills` `main`.
 
 ## Open questions
 
