@@ -5,7 +5,7 @@ cask "sift-it" do
 
   url "https://github.com/jwa91/sift-it/releases/download/v#{version}/sift-it_#{version}_darwin_arm64.tar.gz"
   name "sift-it"
-  desc "Search your files by what's in them, on-device with EmbeddingGemma 2"
+  desc "Local file search for the terminal and Raycast, written in Rust"
   homepage "https://github.com/jwa91/sift-it"
 
   livecheck do

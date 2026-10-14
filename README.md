@@ -24,6 +24,7 @@ and re-run, do not edit the table by hand.
 | [jwa-harden](https://github.com/jwa91/jwa-harden) | cask | 0.1.5 | Wrap a command with op run against the nearest .env.template |
 | [jwa-tobrew](https://github.com/jwa91/jwa-tobrew) | cask | 0.5.0 | Release a project to the personal jwa91/tap Homebrew tap |
 | [prehandover](https://github.com/jwa91/prehandover) | cask | 0.1.2 | Unified agent-stop validation for repo-owned agent harness contracts |
+| [sift-it](https://github.com/jwa91/sift-it) | cask | 0.1.2 | Local file search for the terminal and Raycast, written in Rust |
 | [trnscrb](https://github.com/jwa91/trnscrb) | cask | 0.4.1 | Drop audio, PDFs, and images onto your menu bar to get markdown back |
 
 ```bash
@@ -31,6 +32,7 @@ brew install --cask jwa91/tap/agentskills
 brew install --cask jwa91/tap/jwa-harden
 brew install --cask jwa91/tap/jwa-tobrew
 brew install --cask jwa91/tap/prehandover
+brew install --cask jwa91/tap/sift-it
 brew install --cask jwa91/tap/trnscrb
 ```
 
@@ -38,9 +40,10 @@ brew install --cask jwa91/tap/trnscrb
 
 ## How items get here
 
-This tap is a **pure distribution channel** (ADR 0008). The `.rb` files
-under `Casks/` and `Formula/` are auto-committed by sibling repos via
-their own GoReleaser pipelines. Every Go CLI in the family now ships as
+This tap is a **pure distribution channel** (ADR 0008). Source repositories generate the `.rb` files
+under `Casks/` and `Formula/` through their own release pipelines. Go projects use GoReleaser.
+The Rust project sift-it uses `scripts/release.sh`.
+Every Go CLI in the family now ships as
 a **Cask** (modern `homebrew_casks:` block) with Developer ID signing +
 notarization:
 
@@ -51,6 +54,11 @@ notarization:
 | agentskills | [`jwa91/agentskills`](https://github.com/jwa91/agentskills) | `Casks/agentskills.rb` |
 | prehandover | [`jwa91/prehandover`](https://github.com/jwa91/prehandover) | `Casks/prehandover.rb` |
 | trnscrb | [`jwa91/trnscrb`](https://github.com/jwa91/trnscrb) | `Casks/trnscrb.rb` |
+| sift-it | [`jwa91/sift-it`](https://github.com/jwa91/sift-it) | `Casks/sift-it.rb` |
+
+sift-it provides local file search for the terminal and [Raycast](https://github.com/jwa91/sift-it-for-raycast).
+It builds on [DigUp](https://github.com/ARahim3/DigUp), by Abdur Rahim.
+Its [README](https://github.com/jwa91/sift-it#readme) explains the Rust implementation, ranking changes, and credits.
 
 To add a new item: in its source repo, run `jwa-tobrew init` (auto-detects
 Go / Cask / Formula) to scaffold the repo-local release config that publishes

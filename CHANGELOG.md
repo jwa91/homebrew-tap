@@ -25,6 +25,8 @@ follow [SemVer](https://semver.org) interpreted for a tap repo:
 
 ### Changed
 
+- Describe sift-it as local file search for the terminal and Raycast.
+  Include sift-it in the generated tap index and document its release pipeline and DigUp credit.
 - **ADR 0006 / 0007** refreshed to match the current Cask-based
   distribution model and dotfiles Brewfile entries.
 - **Release skill ownership clarified**: project release skills are installed

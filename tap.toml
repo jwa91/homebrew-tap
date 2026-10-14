@@ -40,6 +40,15 @@ asset   = "prehandover_#{version}_darwin_amd64.tar.gz"
 desc    = "Unified agent-stop validation for repo-owned agent harness contracts"
 
 [[items]]
+name    = "sift-it"
+kind    = "cask"
+source  = "github.com/jwa91/sift-it"
+version = "0.1.2"
+asset   = "sift-it_#{version}_darwin_arm64.tar.gz"
+desc    = "Local file search for the terminal and Raycast, written in Rust"
+deps    = ["arch: :arm64", "macos: :sonoma"]
+
+[[items]]
 name    = "trnscrb"
 kind    = "cask"
 source  = "github.com/jwa91/trnscrb"
