@@ -24,7 +24,7 @@ and re-run, do not edit the table by hand.
 | [jwa-harden](https://github.com/jwa91/jwa-harden) | cask | 0.1.5 | Wrap a command with op run against the nearest .env.template |
 | [jwa-tobrew](https://github.com/jwa91/jwa-tobrew) | cask | 0.5.0 | Release a project to the personal jwa91/tap Homebrew tap |
 | [prehandover](https://github.com/jwa91/prehandover) | cask | 0.1.2 | Unified agent-stop validation for repo-owned agent harness contracts |
-| [sift-it](https://github.com/jwa91/sift-it) | cask | 0.1.2 | Local file search for the terminal and Raycast, written in Rust |
+| [sift-it](https://github.com/jwa91/sift-it) | cask | 0.1.3 | Local file search for the terminal and Raycast, written in Rust |
 | [trnscrb](https://github.com/jwa91/trnscrb) | cask | 0.4.1 | Drop audio, PDFs, and images onto your menu bar to get markdown back |
 
 ```bash
